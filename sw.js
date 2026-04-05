@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crime-map-v1775375600';
+const CACHE_NAME = 'crime-map-v1775376375';
 const PRECACHE_URLS = [
   './',
   'index.html',
@@ -10,8 +10,14 @@ const PRECACHE_URLS = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS))
   );
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', event => {

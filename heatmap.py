@@ -1515,8 +1515,38 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
+        let refreshing = false;
+
+        function askToUpdate(waitingWorker) {
+          if (!waitingWorker) return;
+          const shouldUpdate = window.confirm('A new app update is available. Update now?');
+          if (shouldUpdate) {
+            waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+
         navigator.serviceWorker.register('sw.js').then(reg => {
           reg.update();
+
+          if (reg.waiting) {
+            askToUpdate(reg.waiting);
+          }
+
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                askToUpdate(newWorker);
+              }
+            });
+          });
         }).catch(() => {});
       });
     }
@@ -1656,8 +1686,38 @@ def write_preview_map(heat_data: list[dict], output_file: Path) -> None:
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
+        let refreshing = false;
+
+        function askToUpdate(waitingWorker) {
+          if (!waitingWorker) return;
+          const shouldUpdate = window.confirm('A new app update is available. Update now?');
+          if (shouldUpdate) {
+            waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+
         navigator.serviceWorker.register('sw.js').then(reg => {
           reg.update();
+
+          if (reg.waiting) {
+            askToUpdate(reg.waiting);
+          }
+
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                askToUpdate(newWorker);
+              }
+            });
+          });
         }).catch(() => {});
       });
     }
@@ -2556,8 +2616,38 @@ def write_main_page(heat_data: list[dict], output_file: Path) -> None:
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
+        let refreshing = false;
+
+        function askToUpdate(waitingWorker) {
+          if (!waitingWorker) return;
+          const shouldUpdate = window.confirm('A new app update is available. Update now?');
+          if (shouldUpdate) {
+            waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+
         navigator.serviceWorker.register('sw.js').then(reg => {
           reg.update();
+
+          if (reg.waiting) {
+            askToUpdate(reg.waiting);
+          }
+
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                askToUpdate(newWorker);
+              }
+            });
+          });
         }).catch(() => {});
       });
     }
@@ -2638,8 +2728,14 @@ const PRECACHE_URLS = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS))
   );
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', event => {
