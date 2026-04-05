@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import random
+import time
 import numpy as np
 
 import pandas as pd
@@ -410,9 +411,106 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
+    .mobile-toolbar {
+      display: none;
+      position: absolute;
+      z-index: 1310;
+      top: 58px;
+      left: 8px;
+      right: 8px;
+      gap: 6px;
+    }
+    .mobile-toolbar button {
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(15, 118, 110, 0.9);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 7px 10px;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+    }
+    .mobile-toolbar button.active {
+      background: rgba(21, 88, 155, 0.96);
+      border-color: rgba(255, 255, 255, 0.55);
+    }
+    .mobile-panel-backdrop {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 1200;
+      background: rgba(5, 20, 34, 0.28);
+      pointer-events: none;
+    }
+    .mobile-panel-backdrop.show {
+      display: block;
+      pointer-events: auto;
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: blur(6px);
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e5ebf2;
+    }
+    .panel-head h3 {
+      margin: 0;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .panel-close {
+      width: auto;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid #d4deea;
+      background: #f8fbff;
+      color: #334155;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0 8px;
+      margin: 0;
+      flex: 0 0 auto;
+    }
+    .panel-close:hover {
+      background: #eef5ff;
+    }
+    .rotate-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: linear-gradient(180deg, rgba(9, 26, 43, 0.95), rgba(10, 39, 66, 0.95));
+      color: #fff;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      font-family: 'Manrope', 'Segoe UI', Tahoma, sans-serif;
+    }
+    .rotate-overlay .rotate-box {
+      max-width: 320px;
+    }
+    .rotate-overlay .rotate-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .rotate-overlay .rotate-text {
+      font-size: 13px;
+      opacity: 0.95;
+      line-height: 1.45;
+    }
     .panel {
       position: absolute;
-      z-index: 1000;
+      z-index: 1300;
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
       backdrop-filter: blur(7px);
@@ -422,6 +520,10 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       box-shadow: 0 12px 30px rgba(0, 27, 46, 0.16);
       overflow-y: auto;
       font-size: 13px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      pointer-events: auto;
     }
     .filters-panel { top: 16px; left: 16px; width: 360px; max-height: 66vh; overflow: hidden; }
     .stats-panel { top: 16px; right: 16px; width: 290px; max-height: 42vh; overflow: hidden; }
@@ -514,6 +616,9 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       overflow-y: auto;
       padding: 6px;
       background: #fff;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .checkbox-item {
       display: block;
@@ -529,6 +634,9 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       max-height: calc(66vh - 112px);
       overflow-y: auto;
       padding-right: 4px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .stat-row { display: flex; justify-content: space-between; margin-bottom: 6px; padding: 3px 2px; }
     .stat-label { font-weight: 700; color: #48566a; }
@@ -537,11 +645,17 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       max-height: calc(42vh - 58px);
       overflow-y: auto;
       padding-right: 4px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     #legend-content {
       max-height: calc(34vh - 58px);
       overflow-y: auto;
       padding-right: 4px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .legend-item {
       display: flex;
@@ -572,18 +686,53 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     table th { background: #edf3fb; padding: 6px; text-align: left; font-weight: 800; color: #334155; }
     table td { padding: 6px; border-bottom: 1px solid #e5e9ef; color: #374151; }
-    @media (max-width: 900px) {
-      .title-group { top: 10px; }
-      .app-title { font-size: 12px; }
-      .home-btn { width: 30px; height: 30px; font-size: 16px; }
-      .install-btn { height: 30px; font-size: 11px; padding: 0 10px; }
-      .filters-panel { width: calc(100vw - 32px); max-height: 40vh; }
-      .stats-panel { top: auto; right: auto; left: 16px; bottom: 190px; width: calc(100vw - 32px); max-height: 22vh; }
-      .legend-panel { width: calc(100vw - 32px); max-height: 22vh; left: 16px; right: 16px; bottom: 16px; }
-      .data-drawer { left: 10px; right: 10px; }
-      #filters-content { max-height: calc(40vh - 112px); }
-      #stats-content { max-height: calc(22vh - 58px); }
-      #legend-content { max-height: calc(22vh - 58px); }
+    @media (max-width: 900px) and (orientation: landscape) {
+      .title-group { top: 8px; }
+      .app-title { font-size: 11px; padding: 7px 11px; }
+      .home-btn { width: 28px; height: 28px; font-size: 14px; }
+      .install-btn { height: 28px; font-size: 10px; padding: 0 9px; }
+      .mobile-toolbar {
+        display: flex;
+        top: auto;
+        bottom: 10px;
+        justify-content: center;
+      }
+      .mobile-toolbar button {
+        width: auto;
+        min-width: 64px;
+        padding: 6px 10px;
+      }
+      .panel { display: none; }
+      .panel.mobile-open { display: block; }
+      .filters-panel,
+      .stats-panel,
+      .legend-panel {
+        top: 44px;
+        right: 10px;
+        left: auto;
+        width: min(40vw, 310px);
+        max-height: calc(100vh - 98px);
+        padding: 10px;
+      }
+      .data-toggle { bottom: 50px; left: 10px; }
+      .data-drawer { left: 10px; right: 10px; bottom: 50px; max-height: 44vh; }
+      #filters-content { max-height: calc(100vh - 190px); }
+      #stats-content { max-height: calc(100vh - 160px); }
+      #legend-content { max-height: calc(100vh - 160px); }
+      .checkbox-list { max-height: 92px; }
+      .checkbox-item { font-size: 11px; margin-bottom: 2px; padding: 2px 3px; }
+      .summary-chip { font-size: 10px; padding: 3px 6px; }
+      h3 { font-size: 14px; margin-bottom: 8px; padding-bottom: 6px; }
+      .panel-close { display: inline-flex; align-items: center; justify-content: center; }
+    }
+    @media (max-width: 900px) and (orientation: portrait) {
+      .rotate-overlay { display: flex; }
+      .panel,
+      .mobile-toolbar,
+      .data-toggle,
+      .data-drawer {
+        display: none !important;
+      }
     }
     body.preview-mode .app-title,
     body.preview-mode .home-btn,
@@ -608,10 +757,25 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     <div class="app-title">Malaysia Crime Heatmap Explorer</div>
     <button id="install-app-btn" class="install-btn" type="button">Install App</button>
   </div>
+  <div class="mobile-toolbar" id="mobile-toolbar">
+    <button type="button" data-panel="filters-panel" onclick="toggleMobilePanel('filters-panel')">Filters</button>
+    <button type="button" data-panel="stats-panel" onclick="toggleMobilePanel('stats-panel')">Stats</button>
+    <button type="button" data-panel="legend-panel" onclick="toggleMobilePanel('legend-panel')">Legend</button>
+  </div>
+  <div id="mobile-panel-backdrop" class="mobile-panel-backdrop" onclick="closeMobilePanels()"></div>
+  <div class="rotate-overlay" id="rotate-overlay">
+    <div class="rotate-box">
+      <div class="rotate-title">Rotate Your Phone</div>
+      <div class="rotate-text">For best heatmap visibility and filter controls, use landscape orientation.</div>
+    </div>
+  </div>
   <div id="install-toast" class="install-toast">App installed successfully</div>
 
-  <div class="panel filters-panel">
-    <h3>Filters</h3>
+  <div id="filters-panel" class="panel filters-panel">
+    <div class="panel-head">
+      <h3>Filters</h3>
+      <button type="button" class="panel-close" onclick="closeMobilePanels()">×</button>
+    </div>
     <div id="summary-strip" class="summary-strip"></div>
     <div id="filters-content">
     <div class="field">
@@ -640,17 +804,23 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     </div>
   </div>
 
-  <div class="panel stats-panel">
-    <h3 id="stats-title">Crime by State</h3>
+  <div id="stats-panel" class="panel stats-panel">
+    <div class="panel-head">
+      <h3 id="stats-title">Crime by State</h3>
+      <button type="button" class="panel-close" onclick="closeMobilePanels()">×</button>
+    </div>
     <div id="stats-content">__INITIAL_STATE_ROWS__</div>
   </div>
 
-  <div class="panel legend-panel">
-    <h3>Legend</h3>
+  <div id="legend-panel" class="panel legend-panel">
+    <div class="panel-head">
+      <h3>Legend</h3>
+      <button type="button" class="panel-close" onclick="closeMobilePanels()">×</button>
+    </div>
     <div id="legend-content"></div>
   </div>
 
-  <button id="data-toggle-btn" class="data-toggle" onclick="toggleDataPanel()">Show Data</button>
+  <button id="data-toggle-btn" class="data-toggle" onclick="toggleDataPanel()">Show Table</button>
   
   <div class="data-drawer">
     <button class="close-drawer-btn" onclick="toggleDataPanel()">Close</button>
@@ -695,6 +865,8 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       dataTableContainer: document.getElementById('data-table-container'),
       dataDrawer: document.querySelector('.data-drawer'),
       dataToggleBtn: document.getElementById('data-toggle-btn'),
+      mobilePanelBackdrop: document.getElementById('mobile-panel-backdrop'),
+      mobileToolbar: document.getElementById('mobile-toolbar'),
     };
 
     function initMap() {
@@ -726,6 +898,24 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
 
       renderHeatmap();
       renderDistrictBoundaries();
+    }
+
+    function lockMapInteractionsUnderPanels() {
+      const blockers = [
+        document.getElementById('filters-panel'),
+        document.getElementById('stats-panel'),
+        document.getElementById('legend-panel'),
+        document.querySelector('.data-drawer'),
+        document.getElementById('mobile-toolbar'),
+      ].filter(Boolean);
+
+      blockers.forEach(el => {
+        L.DomEvent.disableClickPropagation(el);
+        L.DomEvent.disableScrollPropagation(el);
+        ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointermove', 'mousedown', 'wheel'].forEach(evt => {
+          L.DomEvent.on(el, evt, L.DomEvent.stopPropagation);
+        });
+      });
     }
 
     function applyPreviewMode() {
@@ -1209,8 +1399,45 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     }
 
     function toggleDataPanel() {
+      if (window.innerWidth <= 900) {
+        closeMobilePanels();
+      }
       const isOpen = els.dataDrawer.classList.toggle('open');
-      els.dataToggleBtn.textContent = isOpen ? 'Hide Data' : 'Show Data';
+      els.dataToggleBtn.textContent = isOpen ? 'Hide Table' : 'Show Table';
+    }
+
+    function closeMobilePanels() {
+      if (window.innerWidth > 900) return;
+      ['filters-panel', 'stats-panel', 'legend-panel'].forEach(id => {
+        const panel = document.getElementById(id);
+        if (panel) panel.classList.remove('mobile-open');
+      });
+      if (els.mobilePanelBackdrop) {
+        els.mobilePanelBackdrop.classList.remove('show');
+      }
+      if (els.mobileToolbar) {
+        els.mobileToolbar.querySelectorAll('button[data-panel]').forEach(btn => btn.classList.remove('active'));
+      }
+    }
+
+    function toggleMobilePanel(panelId) {
+      if (window.innerWidth > 900) return;
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const wasOpen = panel.classList.contains('mobile-open');
+      closeMobilePanels();
+      if (!wasOpen) {
+        panel.classList.add('mobile-open');
+        if (els.mobilePanelBackdrop) {
+          els.mobilePanelBackdrop.classList.add('show');
+        }
+        if (els.mobileToolbar) {
+          const activeBtn = els.mobileToolbar.querySelector(`button[data-panel="${panelId}"]`);
+          if (activeBtn) activeBtn.classList.add('active');
+        }
+      }
+      els.dataDrawer.classList.remove('open');
+      els.dataToggleBtn.textContent = 'Show Table';
     }
 
     function setAllChecked(container, checked) {
@@ -1229,8 +1456,16 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     function resetFilters() { selectAllStates(); selectAllYears(); selectAllTypes(); onStateChange(); }
 
     initMap();
+    lockMapInteractionsUnderPanels();
     map.on('zoomend', onMapZoomEnd);
     map.on('moveend', onMapMoveEnd);
+    map.on('click', (event) => {
+      const target = event && event.originalEvent ? event.originalEvent.target : null;
+      if (target && target.closest && target.closest('#filters-panel, #stats-panel, #legend-panel, .data-drawer, #mobile-toolbar')) {
+        return;
+      }
+      closeMobilePanels();
+    });
     populateSelects();
     // Force consistent default selections on refresh so stats are always populated.
     resetFilters();
@@ -1280,7 +1515,39 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        let refreshing = false;
+
+        function askToUpdate(waitingWorker) {
+          if (!waitingWorker) return;
+          const shouldUpdate = window.confirm('A new app update is available. Update now?');
+          if (shouldUpdate) {
+            waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          reg.update();
+
+          if (reg.waiting) {
+            askToUpdate(reg.waiting);
+          }
+
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                askToUpdate(newWorker);
+              }
+            });
+          });
+        }).catch(() => {});
       });
     }
   </script>
@@ -1419,7 +1686,39 @@ def write_preview_map(heat_data: list[dict], output_file: Path) -> None:
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        let refreshing = false;
+
+        function askToUpdate(waitingWorker) {
+          if (!waitingWorker) return;
+          const shouldUpdate = window.confirm('A new app update is available. Update now?');
+          if (shouldUpdate) {
+            waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          reg.update();
+
+          if (reg.waiting) {
+            askToUpdate(reg.waiting);
+          }
+
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                askToUpdate(newWorker);
+              }
+            });
+          });
+        }).catch(() => {});
       });
     }
   </script>
@@ -2317,7 +2616,39 @@ def write_main_page(heat_data: list[dict], output_file: Path) -> None:
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        let refreshing = false;
+
+        function askToUpdate(waitingWorker) {
+          if (!waitingWorker) return;
+          const shouldUpdate = window.confirm('A new app update is available. Update now?');
+          if (shouldUpdate) {
+            waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          reg.update();
+
+          if (reg.waiting) {
+            askToUpdate(reg.waiting);
+          }
+
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                askToUpdate(newWorker);
+              }
+            });
+          });
+        }).catch(() => {});
       });
     }
 
@@ -2383,7 +2714,9 @@ def write_pwa_assets(base_dir: Path) -> None:
         ]
     }
 
-    sw_js = """const CACHE_NAME = 'crime-map-v1';
+    cache_version = f"crime-map-v{int(time.time())}"
+
+    sw_js = """const CACHE_NAME = '__CACHE_NAME__';
 const PRECACHE_URLS = [
   './',
   'index.html',
@@ -2395,8 +2728,14 @@ const PRECACHE_URLS = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS))
   );
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', event => {
@@ -2411,6 +2750,26 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+
+  const isHtmlRequest = event.request.mode === 'navigate' ||
+    url.pathname.endsWith('.html') ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('/');
+
+  if (isHtmlRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('index.html')))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then(cached => {
@@ -2429,6 +2788,7 @@ self.addEventListener('fetch', event => {
   );
 });
 """
+    sw_js = sw_js.replace("__CACHE_NAME__", cache_version)
 
     icon_svg = """<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'>
   <defs>
