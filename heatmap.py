@@ -743,7 +743,6 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     <button type="button" data-panel="filters-panel" onclick="toggleMobilePanel('filters-panel')">Filters</button>
     <button type="button" data-panel="stats-panel" onclick="toggleMobilePanel('stats-panel')">Stats</button>
     <button type="button" data-panel="legend-panel" onclick="toggleMobilePanel('legend-panel')">Legend</button>
-    <button type="button" onclick="toggleDataPanel()">Data</button>
   </div>
   <div id="mobile-panel-backdrop" class="mobile-panel-backdrop" onclick="closeMobilePanels()"></div>
   <div class="rotate-overlay" id="rotate-overlay">
