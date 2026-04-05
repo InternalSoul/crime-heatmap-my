@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import random
+import time
 import numpy as np
 
 import pandas as pd
@@ -1379,7 +1380,9 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          reg.update();
+        }).catch(() => {});
       });
     }
   </script>
@@ -1518,7 +1521,9 @@ def write_preview_map(heat_data: list[dict], output_file: Path) -> None:
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          reg.update();
+        }).catch(() => {});
       });
     }
   </script>
@@ -2416,7 +2421,9 @@ def write_main_page(heat_data: list[dict], output_file: Path) -> None:
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          reg.update();
+        }).catch(() => {});
       });
     }
 
@@ -2482,7 +2489,9 @@ def write_pwa_assets(base_dir: Path) -> None:
         ]
     }
 
-    sw_js = """const CACHE_NAME = 'crime-map-v1';
+    cache_version = f"crime-map-v{int(time.time())}"
+
+    sw_js = """const CACHE_NAME = '__CACHE_NAME__';
 const PRECACHE_URLS = [
   './',
   'index.html',
@@ -2511,6 +2520,26 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
+  const isHtmlRequest = event.request.mode === 'navigate' ||
+    url.pathname.endsWith('.html') ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('/');
+
+  if (isHtmlRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('index.html')))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(cached => {
       const networkFetch = fetch(event.request)
@@ -2528,6 +2557,7 @@ self.addEventListener('fetch', event => {
   );
 });
 """
+    sw_js = sw_js.replace("__CACHE_NAME__", cache_version)
 
     icon_svg = """<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'>
   <defs>
