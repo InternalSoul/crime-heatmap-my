@@ -619,27 +619,42 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     table th { background: #edf3fb; padding: 6px; text-align: left; font-weight: 800; color: #334155; }
     table td { padding: 6px; border-bottom: 1px solid #e5e9ef; color: #374151; }
     @media (max-width: 900px) and (orientation: landscape) {
-      .title-group { top: 10px; }
-      .app-title { font-size: 12px; }
-      .home-btn { width: 30px; height: 30px; font-size: 16px; }
-      .install-btn { height: 30px; font-size: 11px; padding: 0 10px; }
-      .mobile-toolbar { display: flex; }
+      .title-group { top: 8px; }
+      .app-title { font-size: 11px; padding: 7px 11px; }
+      .home-btn { width: 28px; height: 28px; font-size: 14px; }
+      .install-btn { height: 28px; font-size: 10px; padding: 0 9px; }
+      .mobile-toolbar {
+        display: flex;
+        top: auto;
+        bottom: 10px;
+        justify-content: center;
+      }
+      .mobile-toolbar button {
+        width: auto;
+        min-width: 64px;
+        padding: 6px 10px;
+      }
       .panel { display: none; }
       .panel.mobile-open { display: block; }
       .filters-panel,
       .stats-panel,
       .legend-panel {
-        top: 92px;
-        left: 10px;
+        top: 44px;
         right: 10px;
-        width: auto;
-        max-height: calc(100vh - 152px);
+        left: auto;
+        width: min(46vw, 340px);
+        max-height: calc(100vh - 98px);
+        padding: 10px;
       }
-      .data-toggle { bottom: 10px; left: 10px; }
-      .data-drawer { left: 10px; right: 10px; bottom: 10px; max-height: 52vh; }
-      #filters-content { max-height: calc(100vh - 260px); }
-      #stats-content { max-height: calc(100vh - 230px); }
-      #legend-content { max-height: calc(100vh - 230px); }
+      .data-toggle { bottom: 50px; left: 10px; }
+      .data-drawer { left: 10px; right: 10px; bottom: 50px; max-height: 44vh; }
+      #filters-content { max-height: calc(100vh - 190px); }
+      #stats-content { max-height: calc(100vh - 160px); }
+      #legend-content { max-height: calc(100vh - 160px); }
+      .checkbox-list { max-height: 92px; }
+      .checkbox-item { font-size: 11px; margin-bottom: 2px; padding: 2px 3px; }
+      .summary-chip { font-size: 10px; padding: 3px 6px; }
+      h3 { font-size: 14px; margin-bottom: 8px; padding-bottom: 6px; }
     }
     @media (max-width: 900px) and (orientation: portrait) {
       .rotate-overlay { display: flex; }
