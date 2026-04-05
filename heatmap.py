@@ -802,7 +802,7 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     <div id="legend-content"></div>
   </div>
 
-  <button id="data-toggle-btn" class="data-toggle" onclick="toggleDataPanel()">Show Data</button>
+  <button id="data-toggle-btn" class="data-toggle" onclick="toggleDataPanel()">Show Table</button>
   
   <div class="data-drawer">
     <button class="close-drawer-btn" onclick="toggleDataPanel()">Close</button>
@@ -1367,7 +1367,7 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
         closeMobilePanels();
       }
       const isOpen = els.dataDrawer.classList.toggle('open');
-      els.dataToggleBtn.textContent = isOpen ? 'Hide Data' : 'Show Data';
+      els.dataToggleBtn.textContent = isOpen ? 'Hide Table' : 'Show Table';
     }
 
     function closeMobilePanels() {
@@ -1401,7 +1401,7 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
         }
       }
       els.dataDrawer.classList.remove('open');
-      els.dataToggleBtn.textContent = 'Show Data';
+      els.dataToggleBtn.textContent = 'Show Table';
     }
 
     function setAllChecked(container, checked) {
