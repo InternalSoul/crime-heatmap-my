@@ -518,6 +518,9 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       box-shadow: 0 12px 30px rgba(0, 27, 46, 0.16);
       overflow-y: auto;
       font-size: 13px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .filters-panel { top: 16px; left: 16px; width: 360px; max-height: 66vh; overflow: hidden; }
     .stats-panel { top: 16px; right: 16px; width: 290px; max-height: 42vh; overflow: hidden; }
@@ -610,6 +613,9 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       overflow-y: auto;
       padding: 6px;
       background: #fff;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .checkbox-item {
       display: block;
@@ -625,6 +631,9 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       max-height: calc(66vh - 112px);
       overflow-y: auto;
       padding-right: 4px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .stat-row { display: flex; justify-content: space-between; margin-bottom: 6px; padding: 3px 2px; }
     .stat-label { font-weight: 700; color: #48566a; }
@@ -633,11 +642,17 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       max-height: calc(42vh - 58px);
       overflow-y: auto;
       padding-right: 4px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     #legend-content {
       max-height: calc(34vh - 58px);
       overflow-y: auto;
       padding-right: 4px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .legend-item {
       display: flex;
@@ -880,6 +895,24 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
 
       renderHeatmap();
       renderDistrictBoundaries();
+    }
+
+    function lockMapInteractionsUnderPanels() {
+      const blockers = [
+        document.getElementById('filters-panel'),
+        document.getElementById('stats-panel'),
+        document.getElementById('legend-panel'),
+        document.querySelector('.data-drawer'),
+        document.getElementById('mobile-toolbar'),
+      ].filter(Boolean);
+
+      blockers.forEach(el => {
+        L.DomEvent.disableClickPropagation(el);
+        L.DomEvent.disableScrollPropagation(el);
+        ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointermove', 'mousedown', 'wheel'].forEach(evt => {
+          L.DomEvent.on(el, evt, L.DomEvent.stopPropagation);
+        });
+      });
     }
 
     function applyPreviewMode() {
@@ -1420,6 +1453,7 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     function resetFilters() { selectAllStates(); selectAllYears(); selectAllTypes(); onStateChange(); }
 
     initMap();
+    lockMapInteractionsUnderPanels();
     map.on('zoomend', onMapZoomEnd);
     map.on('moveend', onMapMoveEnd);
     map.on('click', () => closeMobilePanels());
