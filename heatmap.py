@@ -430,6 +430,56 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       padding: 7px 10px;
       box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
     }
+    .mobile-toolbar button.active {
+      background: rgba(21, 88, 155, 0.96);
+      border-color: rgba(255, 255, 255, 0.55);
+    }
+    .mobile-panel-backdrop {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 1190;
+      background: rgba(5, 20, 34, 0.28);
+    }
+    .mobile-panel-backdrop.show {
+      display: block;
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: blur(6px);
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e5ebf2;
+    }
+    .panel-head h3 {
+      margin: 0;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .panel-close {
+      width: auto;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid #d4deea;
+      background: #f8fbff;
+      color: #334155;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0 8px;
+      margin: 0;
+      flex: 0 0 auto;
+    }
+    .panel-close:hover {
+      background: #eef5ff;
+    }
     .rotate-overlay {
       display: none;
       position: fixed;
@@ -642,7 +692,7 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
         top: 44px;
         right: 10px;
         left: auto;
-        width: min(46vw, 340px);
+        width: min(40vw, 310px);
         max-height: calc(100vh - 98px);
         padding: 10px;
       }
@@ -655,6 +705,7 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       .checkbox-item { font-size: 11px; margin-bottom: 2px; padding: 2px 3px; }
       .summary-chip { font-size: 10px; padding: 3px 6px; }
       h3 { font-size: 14px; margin-bottom: 8px; padding-bottom: 6px; }
+      .panel-close { display: inline-flex; align-items: center; justify-content: center; }
     }
     @media (max-width: 900px) and (orientation: portrait) {
       .rotate-overlay { display: flex; }
@@ -689,11 +740,12 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     <button id="install-app-btn" class="install-btn" type="button">Install App</button>
   </div>
   <div class="mobile-toolbar" id="mobile-toolbar">
-    <button type="button" onclick="toggleMobilePanel('filters-panel')">Filters</button>
-    <button type="button" onclick="toggleMobilePanel('stats-panel')">Stats</button>
-    <button type="button" onclick="toggleMobilePanel('legend-panel')">Legend</button>
+    <button type="button" data-panel="filters-panel" onclick="toggleMobilePanel('filters-panel')">Filters</button>
+    <button type="button" data-panel="stats-panel" onclick="toggleMobilePanel('stats-panel')">Stats</button>
+    <button type="button" data-panel="legend-panel" onclick="toggleMobilePanel('legend-panel')">Legend</button>
     <button type="button" onclick="toggleDataPanel()">Data</button>
   </div>
+  <div id="mobile-panel-backdrop" class="mobile-panel-backdrop" onclick="closeMobilePanels()"></div>
   <div class="rotate-overlay" id="rotate-overlay">
     <div class="rotate-box">
       <div class="rotate-title">Rotate Your Phone</div>
@@ -703,7 +755,10 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
   <div id="install-toast" class="install-toast">App installed successfully</div>
 
   <div id="filters-panel" class="panel filters-panel">
-    <h3>Filters</h3>
+    <div class="panel-head">
+      <h3>Filters</h3>
+      <button type="button" class="panel-close" onclick="closeMobilePanels()">×</button>
+    </div>
     <div id="summary-strip" class="summary-strip"></div>
     <div id="filters-content">
     <div class="field">
@@ -733,12 +788,18 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
   </div>
 
   <div id="stats-panel" class="panel stats-panel">
-    <h3 id="stats-title">Crime by State</h3>
+    <div class="panel-head">
+      <h3 id="stats-title">Crime by State</h3>
+      <button type="button" class="panel-close" onclick="closeMobilePanels()">×</button>
+    </div>
     <div id="stats-content">__INITIAL_STATE_ROWS__</div>
   </div>
 
   <div id="legend-panel" class="panel legend-panel">
-    <h3>Legend</h3>
+    <div class="panel-head">
+      <h3>Legend</h3>
+      <button type="button" class="panel-close" onclick="closeMobilePanels()">×</button>
+    </div>
     <div id="legend-content"></div>
   </div>
 
@@ -787,6 +848,8 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       dataTableContainer: document.getElementById('data-table-container'),
       dataDrawer: document.querySelector('.data-drawer'),
       dataToggleBtn: document.getElementById('data-toggle-btn'),
+      mobilePanelBackdrop: document.getElementById('mobile-panel-backdrop'),
+      mobileToolbar: document.getElementById('mobile-toolbar'),
     };
 
     function initMap() {
@@ -1314,6 +1377,12 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
         const panel = document.getElementById(id);
         if (panel) panel.classList.remove('mobile-open');
       });
+      if (els.mobilePanelBackdrop) {
+        els.mobilePanelBackdrop.classList.remove('show');
+      }
+      if (els.mobileToolbar) {
+        els.mobileToolbar.querySelectorAll('button[data-panel]').forEach(btn => btn.classList.remove('active'));
+      }
     }
 
     function toggleMobilePanel(panelId) {
@@ -1322,7 +1391,16 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       if (!panel) return;
       const wasOpen = panel.classList.contains('mobile-open');
       closeMobilePanels();
-      if (!wasOpen) panel.classList.add('mobile-open');
+      if (!wasOpen) {
+        panel.classList.add('mobile-open');
+        if (els.mobilePanelBackdrop) {
+          els.mobilePanelBackdrop.classList.add('show');
+        }
+        if (els.mobileToolbar) {
+          const activeBtn = els.mobileToolbar.querySelector(`button[data-panel="${panelId}"]`);
+          if (activeBtn) activeBtn.classList.add('active');
+        }
+      }
       els.dataDrawer.classList.remove('open');
       els.dataToggleBtn.textContent = 'Show Data';
     }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crime-map-v1775373701';
+const CACHE_NAME = 'crime-map-v1775374102';
 const PRECACHE_URLS = [
   './',
   'index.html',
