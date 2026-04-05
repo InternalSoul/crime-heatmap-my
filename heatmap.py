@@ -438,7 +438,7 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       display: none;
       position: absolute;
       inset: 0;
-      z-index: 1190;
+      z-index: 900;
       background: rgba(5, 20, 34, 0.28);
     }
     .mobile-panel-backdrop.show {
