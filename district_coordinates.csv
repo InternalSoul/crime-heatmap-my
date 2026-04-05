@@ -1,0 +1,175 @@
+state,district,latitude,longitude
+Johor,All,2.022882,103.311456
+Johor,Johor Bahru Selatan,1.408637,103.632801
+Johor,Johor Bahru Utara,1.469559,103.738702
+Johor,Kluang,2.032347,103.319077
+Johor,Kota Tinggi,1.733674,103.900698
+Johor,Ledang,2.25,102.583333
+Johor,Mersing,2.429853,103.835494
+Johor,Muar,2.042505,102.565885
+Johor,Pontian,1.5,103.5
+Johor,Segamat,2.492285,102.845037
+Johor,Seri Alam,1.511064,103.87704
+Kedah,All,5.809826,100.671504
+Kedah,Bandar Baharu,5.167299,100.584935
+Kedah,Bandar Bharu,6.078286,102.233192
+Kedah,Kota Setar,6.122603,100.369032
+Kedah,Kubang Pasu,6.335638,100.372322
+Kedah,Langkawi,6.370039,99.792863
+Kedah,Padang Terap,6.256651,100.66458
+Kedah,Pendang,5.972084,100.550185
+Kedah,Sik,5.923901,100.823102
+Kedah,Yan,5.848275,100.41519
+Kelantan,All,5.40213,102.063597
+Kelantan,Bachok,5.995119,102.386741
+Kelantan,Kota Bharu,6.124791,102.237807
+Kelantan,Kuala Krai,5.531158,102.199367
+Kelantan,Machang,5.76767,102.238082
+Kelantan,Pasir Mas,6.008094,102.092513
+Kelantan,Pasir Puteh,5.834617,102.382964
+Kelantan,Tanah Merah,5.766305,102.034148
+Kelantan,Tumpat,6.176396,102.166328
+Malaysia,All,4.2105,101.6964
+Melaka,All,2.329374,102.288096
+Melaka,Alor Gajah,2.3804,102.2089
+Melaka,Jasin,2.30581,102.422339
+Melaka,Melaka Tengah,2.230145,102.245307
+Negeri Sembilan,All,2.78319,102.192532
+Negeri Sembilan,Jelebu,3.036626,102.117921
+Negeri Sembilan,Jempol,2.850272,102.508196
+Negeri Sembilan,Nilai,2.802923,101.800105
+Negeri Sembilan,Port Dickson,2.526249,101.810616
+Negeri Sembilan,Rembau,2.557892,102.108164
+Negeri Sembilan,Seremban,2.723099,101.94006
+Negeri Sembilan,Tampin,2.554237,102.445996
+Pahang,All,3.616882,102.599455
+Pahang,Bentong,3.362471,102.017268
+Pahang,Cameron Highland,4.470635,101.377861
+Pahang,Cameron Highlands,4.471079,101.375173
+Pahang,Kuantan,3.797449,103.321919
+Pahang,Maran,3.601443,102.641005
+Pahang,Pekan,3.378196,103.209612
+Pahang,Raub,3.884356,101.792028
+Pahang,Rompin,2.824577,103.099356
+Pahang,Temerloh,3.612447,102.256682
+Perak,All,4.812181,100.979791
+Perak,Kuala Kangsar,4.772071,100.940878
+Perak,Manjung,4.334761,100.634266
+Perak,Pengkalan Hulu,5.705757,100.999446
+Perak,Perak Tengah,4.25,100.916667
+Perak,Selama,5.21809,100.69166
+Perak,Sungai Siput,4.818809,101.071298
+Perak,Taiping,4.854677,100.743883
+Perak,Tanjong Malim,3.690008,101.523485
+Perak,Tapah,4.199091,101.259923
+Perlis,All,6.486839,100.257762
+Perlis,Arau,6.430728,100.271879
+Perlis,Kangar,6.438931,100.194484
+Perlis,Padang Besar,6.662684,100.320198
+Pulau Pinang,All,5.406501,100.255908
+Pulau Pinang,Seberang Perai Selatan,5.216964,100.480466
+Pulau Pinang,Seberang Perai Tengah,5.36107,100.457358
+Pulau Pinang,Seberang Perai Utara,5.499281,100.446799
+Pulau Pinang,Timur Laut,5.410314,100.287031
+Sabah,All,5.425736,117.032639
+Sabah,Beaufort,5.291124,115.672474
+Sabah,Kota Kinabatangan,5.605949,117.869311
+Sabah,Kunak,4.685768,118.017066
+Sabah,Lahad Datu,5.115509,118.430636
+Sabah,Papar,5.746149,116.044979
+Sabah,Penampang,5.862623,116.113815
+Sabah,Ranau,5.898031,116.669608
+Sabah,Sandakan,5.839127,118.11586
+Sabah,Semporna,4.479076,118.429773
+Sabah,Sipitang,4.634452,115.686101
+Sabah,Tawau,4.243521,117.885331
+Sabah,Tenom,4.910403,115.905095
+Sabah,Tuaran,6.065921,116.319811
+Sabah,W.P. Labuan,5.068901,115.54401
+Sarawak,All,2.502385,112.954728
+Sarawak,Bau,1.417864,110.155334
+Sarawak,Bintulu,3.187426,113.04728
+Sarawak,Kapit,2.013903,112.935677
+Sarawak,Kota Samarahan,1.459616,110.495456
+Sarawak,Kuching,1.559756,110.345397
+Sarawak,Lawas,4.455121,115.427188
+Sarawak,Limbang,4.351998,115.060242
+Sarawak,Lundu,1.747985,109.777185
+Sarawak,Meradong,2.167632,111.677988
+Sarawak,Miri,4.39401,113.98802
+Sarawak,Padawan,1.427686,110.325596
+Sarawak,Saratok,1.766837,111.408757
+Sarawak,Sarikei,2.050771,111.4176
+Sarawak,Serian,1.113616,110.618221
+Sarawak,Sibu,2.290643,111.825616
+Sarawak,Simunjan,1.275639,110.856092
+Sarawak,Song,1.814243,112.647871
+Sarawak,Sri Aman,1.209712,111.286609
+Sarawak,Tatau,2.623439,113.150393
+Selangor,All,3.20833,101.304146
+Selangor,Ampang Jaya,3.1588,101.757446
+Selangor,Hulu Selangor,3.536744,101.594935
+Selangor,Kajang,2.994844,101.789659
+Selangor,Klang Selatan,3.082897,101.619388
+Selangor,Klang Utara,3.041491,101.387265
+Selangor,Kuala Langat,2.836562,101.496182
+Selangor,Kuala Selangor,3.362102,101.34555
+Selangor,Petaling Jaya,3.098879,101.64542
+Selangor,Sabak Bernam,3.687115,101.058059
+Selangor,Sepang,2.800862,101.709401
+Selangor,Serdang,3.034065,101.705568
+Selangor,Sg. Buloh,3.206263,101.581848
+Selangor,Shah Alam,3.073943,101.518528
+Selangor,Subang Jaya,3.051487,101.582334
+Selangor,Sungai Buloh,3.206263,101.581848
+Terengganu,All,4.863074,102.99493
+Terengganu,Dungun,4.764397,103.418446
+Terengganu,Hulu Terengganu,4.910689,102.76507
+Terengganu,Kemaman,4.239584,103.191261
+Terengganu,Kuala Terengganu,5.329646,103.138327
+Terengganu,Marang,5.166667,103.166667
+Terengganu,Setiu,5.550081,102.735511
+W.P. Kuala Lumpur,All,3.151696,101.694237
+W.P. Kuala Lumpur,Brickfields,3.128857,101.684553
+W.P. Kuala Lumpur,Cheras,3.099192,101.737423
+W.P. Kuala Lumpur,Dang Wangi,3.156898,101.70187
+W.P. Kuala Lumpur,Sentul,3.178586,101.695506
+W.P. Kuala Lumpur,W.P. Putrajaya,2.912208,101.683533
+W.P. Kuala Lumpur,Wangsa Maju,3.205778,101.731861
+Kedah,Baling,6.4167,100.7667
+Pulau Pinang,Barat Daya,5.25,100.2833
+Perak,Batu Gajah,3.3667,101.5167
+Johor,Batu Pahat,1.852,102.5086
+Sarawak,Belaga,2.0333,112.1333
+Sabah,Beluran,4.9333,118.2667
+Pahang,Bera,3.8333,103.0667
+Terengganu,Besut,5.4667,102.6167
+Sarawak,Betong,1.2167,111.05
+Sarawak,Dalat,2.3667,113.3333
+Perak,Gerik,5.8333,100.5667
+Selangor,Gombak,3.1833,101.5333
+Kelantan,Gua Musang,5.3167,102.15
+Perak,Hilir Perak,3.0167,101.4667
+Perak,Ipoh,4.5921,101.5901
+Johor,Iskandar Puteri,1.28,103.74
+Kelantan,Jeli,6.1667,101.6667
+Pahang,Jerantut,4.0167,103.3333
+Sarawak,Julau,2.3333,112.5333
+Perak,Kampar,4.3167,101.55
+Sarawak,Kanowit,2.0333,111.8667
+Sabah,Keningau,4.9167,115.3667
+Perak,Kerian,4.8833,100.8
+Sabah,Kota Belud,5.8333,118.1667
+Sabah,Kota Kinabalu,5.9788,118.0894
+Sabah,Kota Marudu,6.2,117.1
+Pahang,Kuala Lipis,3.3167,102.3167
+Kedah,Kuala Muda,6.1833,100.55
+Negeri Sembilan,Kuala Pilah,2.7333,101.9667
+Sabah,Kudat,6.8833,118.35
+Johor,Kulaijaya,1.8686,103.33
+Kedah,Kulim,5.9667,100.5667
+Sarawak,Lubok Antu,0.9667,111.2333
+Sarawak,Marudi,3.2,113.0667
+Sarawak,Matu Daro,2.0667,111.6667
+Sarawak,Mukah,2.3,112.2667
+Johor,Nusajaya,1.32,103.72

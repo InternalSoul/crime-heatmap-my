@@ -1,0 +1,17 @@
+{
+  "name": "Malaysia Crime Heatmap",
+  "short_name": "CrimeMap MY",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f8fbff",
+  "theme_color": "#0f766e",
+  "description": "Interactive Malaysia crime dashboard and heatmap.",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
