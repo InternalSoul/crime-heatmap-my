@@ -410,6 +410,51 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
+    .mobile-toolbar {
+      display: none;
+      position: absolute;
+      z-index: 1210;
+      top: 58px;
+      left: 8px;
+      right: 8px;
+      gap: 6px;
+    }
+    .mobile-toolbar button {
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(15, 118, 110, 0.9);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 7px 10px;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+    }
+    .rotate-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: linear-gradient(180deg, rgba(9, 26, 43, 0.95), rgba(10, 39, 66, 0.95));
+      color: #fff;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      font-family: 'Manrope', 'Segoe UI', Tahoma, sans-serif;
+    }
+    .rotate-overlay .rotate-box {
+      max-width: 320px;
+    }
+    .rotate-overlay .rotate-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .rotate-overlay .rotate-text {
+      font-size: 13px;
+      opacity: 0.95;
+      line-height: 1.45;
+    }
     .panel {
       position: absolute;
       z-index: 1000;
@@ -572,18 +617,37 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     table th { background: #edf3fb; padding: 6px; text-align: left; font-weight: 800; color: #334155; }
     table td { padding: 6px; border-bottom: 1px solid #e5e9ef; color: #374151; }
-    @media (max-width: 900px) {
+    @media (max-width: 900px) and (orientation: landscape) {
       .title-group { top: 10px; }
       .app-title { font-size: 12px; }
       .home-btn { width: 30px; height: 30px; font-size: 16px; }
       .install-btn { height: 30px; font-size: 11px; padding: 0 10px; }
-      .filters-panel { width: calc(100vw - 32px); max-height: 40vh; }
-      .stats-panel { top: auto; right: auto; left: 16px; bottom: 190px; width: calc(100vw - 32px); max-height: 22vh; }
-      .legend-panel { width: calc(100vw - 32px); max-height: 22vh; left: 16px; right: 16px; bottom: 16px; }
-      .data-drawer { left: 10px; right: 10px; }
-      #filters-content { max-height: calc(40vh - 112px); }
-      #stats-content { max-height: calc(22vh - 58px); }
-      #legend-content { max-height: calc(22vh - 58px); }
+      .mobile-toolbar { display: flex; }
+      .panel { display: none; }
+      .panel.mobile-open { display: block; }
+      .filters-panel,
+      .stats-panel,
+      .legend-panel {
+        top: 92px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-height: calc(100vh - 152px);
+      }
+      .data-toggle { bottom: 10px; left: 10px; }
+      .data-drawer { left: 10px; right: 10px; bottom: 10px; max-height: 52vh; }
+      #filters-content { max-height: calc(100vh - 260px); }
+      #stats-content { max-height: calc(100vh - 230px); }
+      #legend-content { max-height: calc(100vh - 230px); }
+    }
+    @media (max-width: 900px) and (orientation: portrait) {
+      .rotate-overlay { display: flex; }
+      .panel,
+      .mobile-toolbar,
+      .data-toggle,
+      .data-drawer {
+        display: none !important;
+      }
     }
     body.preview-mode .app-title,
     body.preview-mode .home-btn,
@@ -608,9 +672,21 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     <div class="app-title">Malaysia Crime Heatmap Explorer</div>
     <button id="install-app-btn" class="install-btn" type="button">Install App</button>
   </div>
+  <div class="mobile-toolbar" id="mobile-toolbar">
+    <button type="button" onclick="toggleMobilePanel('filters-panel')">Filters</button>
+    <button type="button" onclick="toggleMobilePanel('stats-panel')">Stats</button>
+    <button type="button" onclick="toggleMobilePanel('legend-panel')">Legend</button>
+    <button type="button" onclick="toggleDataPanel()">Data</button>
+  </div>
+  <div class="rotate-overlay" id="rotate-overlay">
+    <div class="rotate-box">
+      <div class="rotate-title">Rotate Your Phone</div>
+      <div class="rotate-text">For best heatmap visibility and filter controls, use landscape orientation.</div>
+    </div>
+  </div>
   <div id="install-toast" class="install-toast">App installed successfully</div>
 
-  <div class="panel filters-panel">
+  <div id="filters-panel" class="panel filters-panel">
     <h3>Filters</h3>
     <div id="summary-strip" class="summary-strip"></div>
     <div id="filters-content">
@@ -640,12 +716,12 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     </div>
   </div>
 
-  <div class="panel stats-panel">
+  <div id="stats-panel" class="panel stats-panel">
     <h3 id="stats-title">Crime by State</h3>
     <div id="stats-content">__INITIAL_STATE_ROWS__</div>
   </div>
 
-  <div class="panel legend-panel">
+  <div id="legend-panel" class="panel legend-panel">
     <h3>Legend</h3>
     <div id="legend-content"></div>
   </div>
@@ -1209,8 +1285,30 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     }
 
     function toggleDataPanel() {
+      if (window.innerWidth <= 900) {
+        closeMobilePanels();
+      }
       const isOpen = els.dataDrawer.classList.toggle('open');
       els.dataToggleBtn.textContent = isOpen ? 'Hide Data' : 'Show Data';
+    }
+
+    function closeMobilePanels() {
+      if (window.innerWidth > 900) return;
+      ['filters-panel', 'stats-panel', 'legend-panel'].forEach(id => {
+        const panel = document.getElementById(id);
+        if (panel) panel.classList.remove('mobile-open');
+      });
+    }
+
+    function toggleMobilePanel(panelId) {
+      if (window.innerWidth > 900) return;
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const wasOpen = panel.classList.contains('mobile-open');
+      closeMobilePanels();
+      if (!wasOpen) panel.classList.add('mobile-open');
+      els.dataDrawer.classList.remove('open');
+      els.dataToggleBtn.textContent = 'Show Data';
     }
 
     function setAllChecked(container, checked) {
@@ -1231,6 +1329,7 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     initMap();
     map.on('zoomend', onMapZoomEnd);
     map.on('moveend', onMapMoveEnd);
+    map.on('click', () => closeMobilePanels());
     populateSelects();
     // Force consistent default selections on refresh so stats are always populated.
     resetFilters();
