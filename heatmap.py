@@ -414,7 +414,7 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     .mobile-toolbar {
       display: none;
       position: absolute;
-      z-index: 1210;
+      z-index: 1310;
       top: 58px;
       left: 8px;
       right: 8px;
@@ -438,11 +438,13 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       display: none;
       position: absolute;
       inset: 0;
-      z-index: 900;
+      z-index: 1200;
       background: rgba(5, 20, 34, 0.28);
+      pointer-events: none;
     }
     .mobile-panel-backdrop.show {
       display: block;
+      pointer-events: auto;
     }
     .panel-head {
       display: flex;
@@ -508,7 +510,7 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     }
     .panel {
       position: absolute;
-      z-index: 1000;
+      z-index: 1300;
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
       backdrop-filter: blur(7px);
@@ -521,6 +523,7 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
+      pointer-events: auto;
     }
     .filters-panel { top: 16px; left: 16px; width: 360px; max-height: 66vh; overflow: hidden; }
     .stats-panel { top: 16px; right: 16px; width: 290px; max-height: 42vh; overflow: hidden; }
@@ -1456,7 +1459,13 @@ def write_html_map(heat_data: list[dict], output_file: Path) -> None:
     lockMapInteractionsUnderPanels();
     map.on('zoomend', onMapZoomEnd);
     map.on('moveend', onMapMoveEnd);
-    map.on('click', () => closeMobilePanels());
+    map.on('click', (event) => {
+      const target = event && event.originalEvent ? event.originalEvent.target : null;
+      if (target && target.closest && target.closest('#filters-panel, #stats-panel, #legend-panel, .data-drawer, #mobile-toolbar')) {
+        return;
+      }
+      closeMobilePanels();
+    });
     populateSelects();
     // Force consistent default selections on refresh so stats are always populated.
     resetFilters();
