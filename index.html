@@ -40,18 +40,81 @@
       background: linear-gradient(135deg, #d9eeff 0%, var(--bg-secondary) 35%, var(--bg-primary) 100%);
       padding: 20px 24px;
     }
-    
-    .container { max-width: 1400px; margin: 0 auto; }
-    
-    .header {
-      text-align: center;
-      margin-bottom: 28px;
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .menu-column {
+      position: sticky;
+      top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding-top: 4px;
+      z-index: 1100;
+    }
+
+    .menu-quick-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px 6px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #dbe7f2;
+      border-radius: 16px;
+      box-shadow: 0 6px 14px rgba(7, 37, 62, 0.1);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .menu-quick-nav.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-6px);
+    }
+
+    .quick-tab-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid #dbe7f2;
+      background: #f8fbff;
+      color: var(--text-secondary);
+      font-size: 18px;
+      cursor: pointer;
+      display: inline-grid;
+      place-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .quick-tab-btn:hover {
+      background: #eef6ff;
+      border-color: #cfe0ef;
+      color: var(--text-primary);
+    }
+
+    .quick-tab-btn.active {
+      background: linear-gradient(135deg, rgba(15,118,110,0.18), rgba(21,88,155,0.2));
+      border-color: rgba(15, 118, 110, 0.5);
+      color: var(--accent-1);
+      box-shadow: 0 4px 10px rgba(15, 118, 110, 0.14);
     }
     
+    .container { max-width: 1400px; margin: 0; }
+    
+    .header {
+      margin-bottom: 28px;
+    }
+
     .header-content {
       display: flex;
       flex-direction: column;
       align-items: center;
+      text-align: center;
       gap: 6px;
     }
     
@@ -160,6 +223,11 @@
       word-break: break-word;
       overflow-wrap: break-word;
     }
+
+    .stat-card .value.value-compact {
+      font-size: clamp(12px, 2.4vw, 16px);
+      line-height: 1.25;
+    }
     
     .stat-card.accent2 .value { color: var(--accent-2); }
     .stat-card.accent3 .value { color: var(--accent-3); }
@@ -183,11 +251,48 @@
     }
     
     .main-layout {
-      display: grid;
-      grid-template-columns: 220px minmax(0, 1fr);
-      gap: 16px;
+      display: block;
       margin-bottom: 28px;
-      align-items: start;
+    }
+
+    .sidebar-toggle {
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      border: 1px solid #dbe7f2;
+      background: #ffffff;
+      color: var(--text-primary);
+      font-family: 'Manrope', 'Segoe UI', Tahoma, sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(7, 37, 62, 0.1);
+      display: inline-grid;
+      place-items: center;
+    }
+    .sidebar-toggle:hover {
+      background: #f2f8ff;
+      border-color: #c8daec;
+    }
+
+    .sidebar-toggle:active {
+      transform: translateY(1px);
+    }
+
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 37, 62, 0.32);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1190;
+    }
+
+    .sidebar-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
     }
     
     .tabs-sidebar {
@@ -198,10 +303,39 @@
       border: 1px solid var(--border-color);
       border-radius: 14px;
       padding: 14px;
-      height: fit-content;
+      height: calc(100vh - 32px);
       box-shadow: 0 10px 22px rgba(7, 37, 62, 0.08);
-      position: sticky;
-      top: 20px;
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      width: min(280px, 82vw);
+      transform: translateX(calc(-100% - 16px));
+      transition: transform 0.22s ease;
+      z-index: 1200;
+      overflow-y: auto;
+    }
+
+    .tabs-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .sidebar-close {
+      border: 1px solid #dbe7f2;
+      background: #f8fbff;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 7px 10px;
+      cursor: pointer;
+      align-self: flex-end;
+      margin-bottom: 2px;
+    }
+
+    .sidebar-close:hover {
+      background: #eef6ff;
+      color: var(--text-primary);
+      border-color: #cfe0ef;
     }
 
     .tabs-sidebar-head {
@@ -373,6 +507,163 @@
       min-width: 80px;
       text-align: right;
     }
+
+    .district-row {
+      align-items: center;
+    }
+
+    .district-more-btn {
+      border: 1px solid #dbe7f2;
+      background: #f7fbff;
+      color: var(--accent-2);
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 6px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      margin-left: 4px;
+    }
+
+    .district-more-btn:hover {
+      background: #ecf4ff;
+      border-color: #cfe0ef;
+    }
+
+    .district-row.focus-flash {
+      background: linear-gradient(90deg, rgba(15,118,110,0.08), rgba(21,88,155,0.08));
+      border-radius: 8px;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+
+    .district-search-tools {
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .compare-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-family: 'Manrope', sans-serif;
+      font-size: 13px;
+      background: #f9fafb;
+    }
+
+    .compare-select:focus {
+      outline: none;
+      border-color: var(--accent-1);
+      background: #fff;
+    }
+
+    .compare-result {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px;
+      background: #fbfdff;
+      min-height: 98px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .compare-charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .compare-chart-panel {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .compare-chart-title {
+      margin: 0 0 6px 0;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .compare-chart-canvas {
+      position: relative;
+      height: 220px;
+    }
+
+    .compare-summary {
+      margin-top: 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .district-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1450;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(7, 37, 62, 0.42);
+    }
+
+    .district-modal.show {
+      display: flex;
+    }
+
+    .district-modal-card {
+      width: min(700px, 96vw);
+      max-height: 86vh;
+      overflow: auto;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      box-shadow: 0 24px 44px rgba(7, 37, 62, 0.22);
+      padding: 16px;
+    }
+
+    .district-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .district-modal-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .district-modal-close {
+      border: 1px solid #dbe7f2;
+      background: #f8fbff;
+      color: var(--text-secondary);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .district-breakdown-list {
+      margin-top: 8px;
+    }
     
     .progress-bar {
       width: 100%;
@@ -462,7 +753,18 @@
     
     @media (max-width: 768px) {
       body { padding: 16px 20px; }
+      .app-shell { grid-template-columns: 1fr; }
+      .menu-column {
+        position: fixed;
+        top: 14px;
+        left: 14px;
+        padding-top: 0;
+      }
+      .menu-quick-nav { gap: 6px; padding: 6px 5px; }
+      .quick-tab-btn { width: 34px; height: 34px; font-size: 16px; }
+      .container { margin: 0 auto; }
       .title { font-size: 28px; }
+      .sidebar-toggle { width: 38px; height: 38px; font-size: 17px; }
       .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
       .stat-card { padding: 14px 10px; min-height: 100px; font-size: 12px; }
       .stat-card .label { font-size: 9px; }
@@ -470,33 +772,39 @@
       .three-column-grid { grid-template-columns: 1fr; }
       .chart-container { height: 250px; }
       .preview-container { height: 360px; }
-      .main-layout { grid-template-columns: 1fr; gap: 12px; }
-      .tabs-sidebar {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-        position: static;
-      }
+      .main-layout { gap: 12px; }
+      .tabs-sidebar { width: min(280px, 88vw); }
       .tabs-sidebar-head {
-        grid-column: 1 / -1;
         margin-bottom: 2px;
       }
       .tabs-sidebar-title { font-size: 12px; }
       .tabs-sidebar-subtitle { font-size: 10px; }
-      .tab-btn { padding: 9px 10px; font-size: 11px; min-width: 70px; justify-content: center; }
+      .tab-btn { padding: 9px 10px; font-size: 11px; min-width: 70px; justify-content: flex-start; }
       .tab-emoji { font-size: 13px; }
+      .compare-grid { grid-template-columns: 1fr; }
+      .compare-charts { grid-template-columns: 1fr; }
     }
     
     @media (max-width: 480px) {
-      .main-layout { grid-template-columns: 1fr; }
-      .tabs-sidebar { gap: 6px; grid-template-columns: 1fr; }
+      .tabs-sidebar { gap: 6px; }
       .tab-btn { padding: 8px; font-size: 10px; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="app-shell">
+    <div class="menu-column">
+      <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-expanded="false" aria-controls="sections-sidebar" aria-label="Toggle section sidebar" title="Sections">☰</button>
+      <div id="quick-section-nav" class="menu-quick-nav" aria-label="Quick sections">
+        <button class="quick-tab-btn active" type="button" data-tab="analysis" onclick="switchTab('analysis', this)" aria-label="Analysis">📊</button>
+        <button class="quick-tab-btn" type="button" data-tab="data" onclick="switchTab('data', this)" aria-label="Data">📋</button>
+        <button class="quick-tab-btn" type="button" data-tab="trends" onclick="switchTab('trends', this)" aria-label="Trends">📈</button>
+        <button class="quick-tab-btn" type="button" data-tab="map" onclick="switchTab('map', this)" aria-label="Map">🗺️</button>
+      </div>
+    </div>
+
+    <div class="container">
     <!-- Header -->
     <div class="header">
       <div class="header-content">
@@ -513,15 +821,17 @@
     <!-- Sidebar + Tabs Layout -->
     <div class="main-layout">
       <!-- Sidebar Navigation -->
-      <div class="tabs-sidebar">
+      <div id="sidebar-overlay" class="sidebar-overlay"></div>
+      <div id="sections-sidebar" class="tabs-sidebar" aria-hidden="true">
+        <button id="sidebar-close" class="sidebar-close" type="button" aria-label="Close section sidebar">Close</button>
         <div class="tabs-sidebar-head">
           <p class="tabs-sidebar-title">Explore Dashboard</p>
           <div class="tabs-sidebar-subtitle">Choose a section view</div>
         </div>
-        <button class="tab-btn active" onclick="switchTab('analysis', this)"><span class="tab-emoji">📊</span><span class="tab-label">Analysis</span></button>
-        <button class="tab-btn" onclick="switchTab('data', this)"><span class="tab-emoji">📋</span><span class="tab-label">Data</span></button>
-        <button class="tab-btn" onclick="switchTab('trends', this)"><span class="tab-emoji">📈</span><span class="tab-label">Trends</span></button>
-        <button class="tab-btn" onclick="switchTab('map', this)"><span class="tab-emoji">🗺️</span><span class="tab-label">Map</span></button>
+        <button class="tab-btn active" type="button" data-tab="analysis" onclick="switchTab('analysis', this)"><span class="tab-emoji">📊</span><span class="tab-label">Analysis</span></button>
+        <button class="tab-btn" type="button" data-tab="data" onclick="switchTab('data', this)"><span class="tab-emoji">📋</span><span class="tab-label">Data</span></button>
+        <button class="tab-btn" type="button" data-tab="trends" onclick="switchTab('trends', this)"><span class="tab-emoji">📈</span><span class="tab-label">Trends</span></button>
+        <button class="tab-btn" type="button" data-tab="map" onclick="switchTab('map', this)"><span class="tab-emoji">🗺️</span><span class="tab-label">Map</span></button>
       </div>
 
       <!-- Tab Content -->
@@ -576,9 +886,21 @@
             </div>
             <div class="panel">
               <h3>All Districts</h3>
-              <input type="text" id="districtsSearch" class="search-box" placeholder="Search districts...">
+              <div class="district-search-tools">
+                <input type="text" id="districtsSearch" class="search-box" placeholder="Search districts (press Enter to jump)...">
+              </div>
               <div id="all-districts-list" style="max-height: 500px; overflow-y: auto;"></div>
             </div>
+          </div>
+
+          <div class="section-title"><span class="section-emoji">⚖️</span>Compare Mode</div>
+          <div class="panel" style="margin-bottom: 18px;">
+            <h3>Compare Two Districts</h3>
+            <div class="compare-grid">
+              <select id="compare-district-a" class="compare-select"></select>
+              <select id="compare-district-b" class="compare-select"></select>
+            </div>
+            <div id="compare-result" class="compare-result">Select two districts to compare crime totals and top crime type.</div>
           </div>
 
           <div class="section-title"><span class="section-emoji">🧾</span>Additional Details</div>
@@ -615,9 +937,88 @@
       </div>
     </div>
   </div>
+  </div>
+
+  <div id="district-modal" class="district-modal" aria-hidden="true">
+    <div class="district-modal-card" role="dialog" aria-modal="true" aria-labelledby="district-modal-title">
+      <div class="district-modal-head">
+        <h3 id="district-modal-title" class="district-modal-title">District Details</h3>
+        <button id="district-modal-close" class="district-modal-close" type="button">Close</button>
+      </div>
+      <div id="district-modal-summary"></div>
+      <div id="district-breakdown-list" class="district-breakdown-list"></div>
+    </div>
+  </div>
 
   <script>
     const summary = {"total_crimes": 3633671, "total_points": 122228, "states_count": 14, "districts_count": 155, "types_count": 12, "years_count": 8, "top_state": "Selangor", "top_type": "Theft Vehicle Motorcycle", "top_states": [{"name": "Selangor", "value": 630509}, {"name": "W.P. Kuala Lumpur", "value": 310804}, {"name": "Johor", "value": 263852}, {"name": "Kedah", "value": 172740}, {"name": "Sarawak", "value": 172544}, {"name": "Sabah", "value": 155776}, {"name": "Pulau Pinang", "value": 146612}, {"name": "Perak", "value": 137408}], "top_types": [{"name": "Theft Vehicle Motorcycle", "value": 487977}, {"name": "Theft Other", "value": 439980}, {"name": "Break In", "value": 344202}, {"name": "Theft Vehicle Motorcar", "value": 141843}, {"name": "Robbery Gang Unarmed", "value": 133080}, {"name": "Causing Injury", "value": 106824}], "top_districts": [{"name": "Johor Bahru", "value": 51234}, {"name": "Petaling Jaya", "value": 46156}, {"name": "Klang", "value": 44680}, {"name": "Dang Wangi", "value": 39960}, {"name": "Kajang", "value": 38500}, {"name": "Gombak", "value": 38116}], "top_categories": [{"name": "Property", "value": 2897717}, {"name": "Assault", "value": 735954}], "all_states": [{"name": "Selangor", "value": 630509}, {"name": "W.P. Kuala Lumpur", "value": 310804}, {"name": "Johor", "value": 263852}, {"name": "Kedah", "value": 172740}, {"name": "Sarawak", "value": 172544}, {"name": "Sabah", "value": 155776}, {"name": "Pulau Pinang", "value": 146612}, {"name": "Perak", "value": 137408}, {"name": "Kelantan", "value": 101392}, {"name": "Negeri Sembilan", "value": 93568}, {"name": "Pahang", "value": 89540}, {"name": "Melaka", "value": 71920}, {"name": "Terengganu", "value": 59936}, {"name": "Perlis", "value": 16076}], "all_types": [{"name": "Theft Vehicle Motorcycle", "value": 487977}, {"name": "Theft Other", "value": 439980}, {"name": "Break In", "value": 344202}, {"name": "Theft Vehicle Motorcar", "value": 141843}, {"name": "Robbery Gang Unarmed", "value": 133080}, {"name": "Causing Injury", "value": 106824}, {"name": "Robbery Solo Unarmed", "value": 78267}, {"name": "Rape", "value": 41604}, {"name": "Theft Vehicle Lorry", "value": 34512}, {"name": "Murder", "value": 7386}, {"name": "Robbery Gang Armed", "value": 615}, {"name": "Robbery Solo Armed", "value": 201}], "all_districts": [{"name": "Johor Bahru", "value": 51234}, {"name": "Petaling Jaya", "value": 46156}, {"name": "Klang", "value": 44680}, {"name": "Dang Wangi", "value": 39960}, {"name": "Kajang", "value": 38500}, {"name": "Gombak", "value": 38116}, {"name": "Sentul", "value": 32912}, {"name": "Ampang Jaya", "value": 31386}, {"name": "Wangsa Maju", "value": 29930}, {"name": "Melaka Tengah", "value": 27530}, {"name": "Ipoh", "value": 26176}, {"name": "Kuala Muda", "value": 25904}, {"name": "Brickfields", "value": 25390}, {"name": "Serdang", "value": 24717}, {"name": "Seberang Perai Tengah", "value": 24358}, {"name": "Cheras", "value": 23358}, {"name": "Timur Laut", "value": 21604}, {"name": "Kota Setar", "value": 20952}, {"name": "Kota Bharu", "value": 20758}, {"name": "Seberang Perai", "value": 20310}, {"name": "Seri Alam", "value": 20014}, {"name": "Kota Kinabalu", "value": 19588}, {"name": "Kuching", "value": 19504}, {"name": "Subang Jaya", "value": 18798}, {"name": "Shah Alam", "value": 18638}, {"name": "Kuantan", "value": 18148}, {"name": "Seremban", "value": 17990}, {"name": "Padawan", "value": 12794}, {"name": "Miri", "value": 12380}, {"name": "Nilai", "value": 12330}, {"name": "Tawau", "value": 12230}, {"name": "Kulim", "value": 12052}, {"name": "Sepang", "value": 11592}, {"name": "Sg. Buloh", "value": 11092}, {"name": "Sibu", "value": 10932}, {"name": "Iskandar Puteri", "value": 9700}, {"name": "Kuala Terengganu", "value": 9248}, {"name": "Sandakan", "value": 8956}, {"name": "Taiping", "value": 8932}, {"name": "Kuala Langat", "value": 8768}, {"name": "Batu Pahat", "value": 8604}, {"name": "Kulaijaya", "value": 8454}, {"name": "Kubang Pasu", "value": 8370}, {"name": "Kluang", "value": 7946}, {"name": "Hilir Perak", "value": 7756}, {"name": "Hulu Selangor", "value": 7470}, {"name": "Kuala Selangor", "value": 7328}, {"name": "Bintulu", "value": 7278}, {"name": "Manjung", "value": 7210}, {"name": "Barat Daya", "value": 7034}, {"name": "Kota Tinggi", "value": 6566}, {"name": "Penampang", "value": 6534}, {"name": "Besut", "value": 5866}, {"name": "Langkawi", "value": 5470}, {"name": "Kota Samarahan", "value": 5436}, {"name": "Bentong", "value": 5426}, {"name": "Kemaman", "value": 5222}, {"name": "Alor Gajah", "value": 5090}, {"name": "Pasir Mas", "value": 4996}, {"name": "Port Dickson", "value": 4882}, {"name": "Pasir Puteh", "value": 4868}, {"name": "Kangar", "value": 4862}, {"name": "Baling", "value": 4820}, {"name": "Muar", "value": 4580}, {"name": "Segamat", "value": 4540}, {"name": "Semporna", "value": 4508}, {"name": "Sabak Bernam", "value": 4506}, {"name": "Tumpat", "value": 4352}, {"name": "Temerloh", "value": 4140}, {"name": "Dungun", "value": 4128}, {"name": "Bachok", "value": 3908}, {"name": "Sungai Buloh", "value": 3852}, {"name": "W.P. Putrajaya", "value": 3852}, {"name": "Lahad Datu", "value": 3832}, {"name": "Pontian", "value": 3592}, {"name": "Jempol", "value": 3484}, {"name": "Pendang", "value": 3448}, {"name": "Tanah Merah", "value": 3340}, {"name": "Jasin", "value": 3340}, {"name": "Papar", "value": 3218}, {"name": "Maran", "value": 3154}, {"name": "Kerian", "value": 3080}, {"name": "Machang", "value": 3058}, {"name": "W.P. Labuan", "value": 3006}, {"name": "Ledang", "value": 2828}, {"name": "Kuala Pilah", "value": 2788}, {"name": "Rompin", "value": 2728}, {"name": "Tampin", "value": 2592}, {"name": "Keningau", "value": 2570}, {"name": "Jerantut", "value": 2528}, {"name": "Tapah", "value": 2516}, {"name": "Pekan", "value": 2452}, {"name": "Gua Musang", "value": 2362}, {"name": "Marang", "value": 2352}, {"name": "Kuala Krai", "value": 2344}, {"name": "Kampar", "value": 2314}, {"name": "Sarikei", "value": 2146}, {"name": "Bera", "value": 2110}, {"name": "Perak Tengah", "value": 2006}, {"name": "Nusajaya", "value": 1972}, {"name": "Serian", "value": 1934}, {"name": "Kota Belud", "value": 1930}, {"name": "Arau", "value": 1902}, {"name": "Mersing", "value": 1896}, {"name": "Yan", "value": 1872}, {"name": "Hulu Terengganu", "value": 1870}, {"name": "Kuala Kangsar", "value": 1848}, {"name": "Tanjong Malim", "value": 1836}, {"name": "Beaufort", "value": 1774}, {"name": "Rembau", "value": 1696}, {"name": "Sri Aman", "value": 1664}, {"name": "Padang Terap", "value": 1650}, {"name": "Raub", "value": 1618}, {"name": "Sungai Siput", "value": 1604}, {"name": "Kuala Lipis", "value": 1598}, {"name": "Batu Gajah", "value": 1510}, {"name": "Tuaran", "value": 1464}, {"name": "Kota Marudu", "value": 1378}, {"name": "Setiu", "value": 1282}, {"name": "Padang Besar", "value": 1274}, {"name": "Marudi", "value": 1220}, {"name": "Ranau", "value": 1204}, {"name": "Betong", "value": 1178}, {"name": "Sipitang", "value": 1138}, {"name": "Gerik", "value": 1132}, {"name": "Kota Kinabatangan", "value": 1126}, {"name": "Mukah", "value": 1124}, {"name": "Beluran", "value": 1062}, {"name": "Jelebu", "value": 1022}, {"name": "Sik", "value": 974}, {"name": "Bau", "value": 960}, {"name": "Kunak", "value": 948}, {"name": "Lundu", "value": 942}, {"name": "Cameron Highlands", "value": 868}, {"name": "Limbang", "value": 780}, {"name": "Kudat", "value": 740}, {"name": "Jeli", "value": 710}, {"name": "Kapit", "value": 710}, {"name": "Meradong", "value": 688}, {"name": "Tenom", "value": 682}, {"name": "Simunjan", "value": 670}, {"name": "Belaga", "value": 654}, {"name": "Lawas", "value": 642}, {"name": "Saratok", "value": 616}, {"name": "Selama", "value": 554}, {"name": "Bandar Bharu", "value": 528}, {"name": "Matu Daro", "value": 436}, {"name": "Lubok Antu", "value": 374}, {"name": "Tatau", "value": 332}, {"name": "Bandar Baharu", "value": 330}, {"name": "Dalat", "value": 308}, {"name": "Kanowit", "value": 254}, {"name": "Pengkalan Hulu", "value": 230}, {"name": "Julau", "value": 174}, {"name": "Song", "value": 142}], "yearly": [{"year": 2016, "value": 674130}, {"year": 2017, "value": 595020}, {"year": 2018, "value": 531972}, {"year": 2019, "value": 500736}, {"year": 2020, "value": 394058}, {"year": 2021, "value": 318213}, {"year": 2022, "value": 304878}, {"year": 2023, "value": 314664}]};
+    const districtTotalsLookup = new Map(summary.all_districts.map(item => [item.name, item.value]));
+    let districtBreakdownMap = null;
+
+    function normalizeDistrictName(name) {
+      return (name || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function formatCrimeType(type) {
+      return String(type || '')
+        .split('_')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+    }
+
+    async function ensureDistrictBreakdownLoaded() {
+      if (districtBreakdownMap) return;
+      districtBreakdownMap = new Map();
+
+      const response = await fetch('crime_district.csv');
+      const text = await response.text();
+      const lines = text.split(/\r?\n/).filter(Boolean);
+
+      for (let i = 1; i < lines.length; i += 1) {
+        const [state, district, category, type, date, crimes] = lines[i].split(',');
+        if (!district || district === 'All' || !type || type === 'all') continue;
+        const count = Number(crimes) || 0;
+        const normalizedDistrict = normalizeDistrictName(district);
+        if (!districtBreakdownMap.has(normalizedDistrict)) {
+          districtBreakdownMap.set(normalizedDistrict, new Map());
+        }
+        const typeMap = districtBreakdownMap.get(normalizedDistrict);
+        typeMap.set(type, (typeMap.get(type) || 0) + count);
+      }
+    }
+
+    function getDistrictBreakdownRows(districtName) {
+      const normalizedDistrict = normalizeDistrictName(districtName);
+      const exactTypeMap = districtBreakdownMap?.get(normalizedDistrict);
+
+      let workingMap = exactTypeMap;
+      if (!workingMap && districtBreakdownMap) {
+        const mergedMap = new Map();
+        districtBreakdownMap.forEach((typeMap, districtKey) => {
+          const isRelatedDistrict = districtKey.startsWith(`${normalizedDistrict} `) ||
+            districtKey.includes(` ${normalizedDistrict} `) ||
+            districtKey.endsWith(` ${normalizedDistrict}`);
+          if (!isRelatedDistrict) return;
+          typeMap.forEach((value, type) => {
+            mergedMap.set(type, (mergedMap.get(type) || 0) + value);
+          });
+        });
+        workingMap = mergedMap.size ? mergedMap : null;
+      }
+
+      if (!workingMap) return [];
+      return [...workingMap.entries()]
+        .map(([type, value]) => ({ name: formatCrimeType(type), value }))
+        .sort((a, b) => b.value - a.value);
+    }
+
+    function escapeAttribute(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
 
     // Generate Stat Cards
     function renderStats() {
@@ -629,11 +1030,11 @@
         { label: 'Crime Types', value: summary.types_count, class: 'accent2' },
         { label: 'Years Covered', value: summary.years_count, class: 'accent3' },
         { label: 'Top State', value: summary.top_state, class: '' },
-        { label: 'Top Crime', value: summary.top_type, class: 'accent2' },
+        { label: 'Top Crime', value: summary.top_type, class: 'accent2', valueClass: 'value-compact' },
       ];
 
       document.getElementById('stats-container').innerHTML = stats
-        .map(stat => `<div class="stat-card ${stat.class}"><div class="label">${stat.label}</div><div class="value">${stat.value}</div></div>`)
+        .map(stat => `<div class="stat-card ${stat.class}"><div class="label">${stat.label}</div><div class="value ${stat.valueClass || ''}">${stat.value}</div></div>`)
         .join('');
     }
 
@@ -681,20 +1082,31 @@
       if (label.length > 20) return label.substring(0, 17) + '...';
       return label;
     };
+
+    const majorTypeCount = 5;
+    const majorTypes = summary.all_types.slice(0, majorTypeCount);
+    const othersValue = summary.all_types
+      .slice(majorTypeCount)
+      .reduce((sum, item) => sum + item.value, 0);
+
+    const crimeTypeChartData = [...majorTypes];
+    if (othersValue > 0) {
+      crimeTypeChartData.push({ name: 'Others', value: othersValue });
+    }
     
     new Chart(typesCtx, {
       type: 'doughnut',
       data: {
-        labels: summary.top_types.map(t => shortenLabel(t.name)),
+        labels: crimeTypeChartData.map(t => shortenLabel(t.name)),
         datasets: [{
-          data: summary.top_types.map(t => t.value),
+          data: crimeTypeChartData.map(t => t.value),
           backgroundColor: [
             'rgba(15, 118, 110, 0.85)',
             'rgba(21, 88, 155, 0.85)',
             'rgba(217, 119, 6, 0.85)',
             'rgba(239, 68, 68, 0.85)',
             'rgba(16, 185, 129, 0.85)',
-            'rgba(168, 85, 247, 0.85)',
+            'rgba(100, 116, 139, 0.82)',
           ],
           borderColor: '#fff',
           borderWidth: 2,
@@ -802,9 +1214,11 @@
         document.getElementById('all-districts-list').innerHTML = filteredDistricts
           .map(item => {
             const percent = Math.round((item.value / getMaxValue(summary.all_districts)) * 100);
-            return `<div class="list-item">
+            const safeName = escapeAttribute(item.name);
+            return `<div class="list-item district-row" data-district="${safeName}">
               <span class="item-name">${item.name}</span>
               <span class="item-value">${item.value.toLocaleString()}</span>
+              <button class="district-more-btn" type="button" data-district="${safeName}">Show more</button>
               <div style="width: 40px; margin-left: 8px;"><div class="progress-bar"><div class="progress-fill" style="width: ${percent}%"></div></div></div>
             </div>`;
           })
@@ -822,6 +1236,12 @@
         const query = e.target.value.toLowerCase();
         filteredDistricts = summary.all_districts.filter(item => item.name.toLowerCase().includes(query));
         renderDistrictsList();
+      });
+
+      document.getElementById('all-districts-list').addEventListener('click', async (event) => {
+        const showMoreBtn = event.target.closest('.district-more-btn');
+        if (!showMoreBtn) return;
+        await openDistrictModal(showMoreBtn.dataset.district);
       });
 
       // Crime Categories
@@ -858,32 +1278,341 @@
     renderStats();
     renderLists();
 
+    const districtModal = document.getElementById('district-modal');
+    const districtModalClose = document.getElementById('district-modal-close');
+    const districtModalTitle = document.getElementById('district-modal-title');
+    const districtModalSummary = document.getElementById('district-modal-summary');
+    const districtBreakdownList = document.getElementById('district-breakdown-list');
+
+    async function openDistrictModal(districtName) {
+      await ensureDistrictBreakdownLoaded();
+      const rows = getDistrictBreakdownRows(districtName);
+      const total = districtTotalsLookup.get(districtName) || 0;
+
+      districtModalTitle.textContent = `${districtName} - District Details`;
+      districtModalSummary.innerHTML = `<div class="list-item"><span class="item-name">Total Crimes</span><span class="item-value">${total.toLocaleString()}</span></div>`;
+      districtBreakdownList.innerHTML = rows.length
+        ? rows.map(item => `<div class="list-item"><span class="item-name">${item.name}</span><span class="item-value">${item.value.toLocaleString()}</span></div>`).join('')
+        : '<div class="list-item"><span class="item-name">No district type breakdown found.</span></div>';
+
+      districtModal.classList.add('show');
+      districtModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeDistrictModal() {
+      districtModal.classList.remove('show');
+      districtModal.setAttribute('aria-hidden', 'true');
+    }
+
+    districtModalClose.addEventListener('click', closeDistrictModal);
+    districtModal.addEventListener('click', (event) => {
+      if (event.target === districtModal) closeDistrictModal();
+    });
+
+    function getBestDistrictMatch(query) {
+      const normalizedQuery = normalizeDistrictName(query);
+      if (!normalizedQuery) return null;
+      const allDistricts = summary.all_districts;
+
+      const exact = allDistricts.find(item => normalizeDistrictName(item.name) === normalizedQuery);
+      if (exact) return exact;
+
+      const startsWith = allDistricts.find(item => normalizeDistrictName(item.name).startsWith(normalizedQuery));
+      if (startsWith) return startsWith;
+
+      return allDistricts.find(item => normalizeDistrictName(item.name).includes(normalizedQuery)) || null;
+    }
+
+    async function smartJumpToDistrict(query) {
+      const match = getBestDistrictMatch(query);
+      if (!match) {
+        alert('No matching district found.');
+        return;
+      }
+
+      switchTab('data');
+      const districtSearchInput = document.getElementById('districtsSearch');
+      districtSearchInput.value = match.name;
+      districtSearchInput.dispatchEvent(new Event('keyup'));
+
+      requestAnimationFrame(() => {
+        const rows = document.querySelectorAll('.district-row');
+        rows.forEach(row => {
+          if (row.dataset.district === match.name) {
+            row.classList.add('focus-flash');
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => row.classList.remove('focus-flash'), 1200);
+          }
+        });
+      });
+
+      await openDistrictModal(match.name);
+    }
+
+    const districtSearchInput = document.getElementById('districtsSearch');
+
+    districtSearchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        smartJumpToDistrict(districtSearchInput.value);
+      }
+    });
+
+    const compareDistrictA = document.getElementById('compare-district-a');
+    const compareDistrictB = document.getElementById('compare-district-b');
+    const compareResult = document.getElementById('compare-result');
+    let compareChartA = null;
+    let compareChartB = null;
+
+    function getComparePieData(rows) {
+      const topRows = rows.slice(0, 6);
+      const otherTotal = rows.slice(6).reduce((sum, item) => sum + item.value, 0);
+      const labels = topRows.map(item => item.name);
+      const values = topRows.map(item => item.value);
+
+      if (otherTotal > 0) {
+        labels.push('Others');
+        values.push(otherTotal);
+      }
+
+      return { labels, values };
+    }
+
+    function destroyCompareCharts() {
+      if (compareChartA) {
+        compareChartA.destroy();
+        compareChartA = null;
+      }
+      if (compareChartB) {
+        compareChartB.destroy();
+        compareChartB = null;
+      }
+    }
+
+    function populateCompareSelectors() {
+      const optionsHtml = summary.all_districts
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(item => `<option value="${escapeAttribute(item.name)}">${item.name}</option>`)
+        .join('');
+
+      compareDistrictA.innerHTML = `<option value="">Select district A</option>${optionsHtml}`;
+      compareDistrictB.innerHTML = `<option value="">Select district B</option>${optionsHtml}`;
+    }
+
+    async function renderComparison() {
+      const districtA = compareDistrictA.value;
+      const districtB = compareDistrictB.value;
+
+      if (!districtA || !districtB) {
+        destroyCompareCharts();
+        compareResult.textContent = 'Select two districts to compare crime totals and top crime type.';
+        return;
+      }
+      if (districtA === districtB) {
+        destroyCompareCharts();
+        compareResult.textContent = 'Choose two different districts for comparison.';
+        return;
+      }
+
+      await ensureDistrictBreakdownLoaded();
+      const totalA = districtTotalsLookup.get(districtA) || 0;
+      const totalB = districtTotalsLookup.get(districtB) || 0;
+      const diff = totalA - totalB;
+      const leader = diff > 0 ? districtA : districtB;
+      const leadBy = Math.abs(diff);
+
+      const rowsA = getDistrictBreakdownRows(districtA);
+      const rowsB = getDistrictBreakdownRows(districtB);
+
+      if (!rowsA.length || !rowsB.length) {
+        destroyCompareCharts();
+        compareResult.textContent = 'Breakdown data is not available for one or both districts.';
+        return;
+      }
+
+      const pieDataA = getComparePieData(rowsA);
+      const pieDataB = getComparePieData(rowsB);
+      const palette = [
+        'rgba(15, 118, 110, 0.86)',
+        'rgba(21, 88, 155, 0.86)',
+        'rgba(217, 119, 6, 0.86)',
+        'rgba(239, 68, 68, 0.86)',
+        'rgba(16, 185, 129, 0.86)',
+        'rgba(168, 85, 247, 0.86)',
+        'rgba(100, 116, 139, 0.8)'
+      ];
+
+      compareResult.innerHTML = `
+        <div class="compare-charts">
+          <div class="compare-chart-panel">
+            <p class="compare-chart-title">${districtA} (${totalA.toLocaleString()})</p>
+            <div class="compare-chart-canvas"><canvas id="compare-chart-a"></canvas></div>
+          </div>
+          <div class="compare-chart-panel">
+            <p class="compare-chart-title">${districtB} (${totalB.toLocaleString()})</p>
+            <div class="compare-chart-canvas"><canvas id="compare-chart-b"></canvas></div>
+          </div>
+        </div>
+        <div class="compare-summary">Difference: ${leadBy.toLocaleString()} (${leader} higher)</div>
+      `;
+
+      destroyCompareCharts();
+
+      compareChartA = new Chart(document.getElementById('compare-chart-a').getContext('2d'), {
+        type: 'pie',
+        data: {
+          labels: pieDataA.labels,
+          datasets: [{
+            data: pieDataA.values,
+            backgroundColor: pieDataA.labels.map((_, idx) => palette[idx % palette.length]),
+            borderColor: '#fff',
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { font: { size: 10 }, boxWidth: 12 }
+            }
+          }
+        }
+      });
+
+      compareChartB = new Chart(document.getElementById('compare-chart-b').getContext('2d'), {
+        type: 'pie',
+        data: {
+          labels: pieDataB.labels,
+          datasets: [{
+            data: pieDataB.values,
+            backgroundColor: pieDataB.labels.map((_, idx) => palette[idx % palette.length]),
+            borderColor: '#fff',
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { font: { size: 10 }, boxWidth: 12 }
+            }
+          }
+        }
+      });
+    }
+
+    populateCompareSelectors();
+    compareDistrictA.addEventListener('change', renderComparison);
+    compareDistrictB.addEventListener('change', renderComparison);
+
     // Tab Switching Function
     function switchTab(tabName, btn) {
       // Hide all tab panels
       document.querySelectorAll('.tab-panel').forEach(panel => {
         panel.classList.remove('active');
       });
-      
-      // Remove active class from all buttons
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      
+
       // Show selected tab
       document.getElementById(tabName + '-tab').classList.add('active');
-      
-      // Add active class to clicked button
-      if (btn) {
-        btn.classList.add('active');
-      }
+
+      syncActiveSection(tabName);
+
+      closeSectionSidebar();
     }
+
+    const sectionSidebar = document.getElementById('sections-sidebar');
+    const sectionSidebarToggle = document.getElementById('sidebar-toggle');
+    const sectionSidebarClose = document.getElementById('sidebar-close');
+    const sectionSidebarOverlay = document.getElementById('sidebar-overlay');
+    const quickSectionNav = document.getElementById('quick-section-nav');
+
+    function syncActiveSection(tabName) {
+      document.querySelectorAll('.tab-btn, .quick-tab-btn').forEach(button => {
+        const isActive = button.dataset.tab === tabName;
+        button.classList.toggle('active', isActive);
+        if (isActive) {
+          button.setAttribute('aria-current', 'page');
+        } else {
+          button.removeAttribute('aria-current');
+        }
+      });
+    }
+
+    function setQuickNavVisibility(isSidebarOpen) {
+      if (!quickSectionNav) return;
+      quickSectionNav.classList.toggle('is-hidden', isSidebarOpen);
+      quickSectionNav.setAttribute('aria-hidden', isSidebarOpen ? 'true' : 'false');
+    }
+
+    function openSectionSidebar() {
+      if (!sectionSidebar) return;
+      sectionSidebar.classList.add('open');
+      sectionSidebar.setAttribute('aria-hidden', 'false');
+      if (sectionSidebarOverlay) sectionSidebarOverlay.classList.add('show');
+      if (sectionSidebarToggle) sectionSidebarToggle.setAttribute('aria-expanded', 'true');
+      setQuickNavVisibility(true);
+    }
+
+    function closeSectionSidebar() {
+      if (!sectionSidebar) return;
+      sectionSidebar.classList.remove('open');
+      sectionSidebar.setAttribute('aria-hidden', 'true');
+      if (sectionSidebarOverlay) sectionSidebarOverlay.classList.remove('show');
+      if (sectionSidebarToggle) sectionSidebarToggle.setAttribute('aria-expanded', 'false');
+      setQuickNavVisibility(false);
+    }
+
+    if (sectionSidebarToggle) {
+      sectionSidebarToggle.addEventListener('click', () => {
+        if (sectionSidebar.classList.contains('open')) {
+          closeSectionSidebar();
+          return;
+        }
+        openSectionSidebar();
+      });
+    }
+
+    if (sectionSidebarClose) {
+      sectionSidebarClose.addEventListener('click', closeSectionSidebar);
+    }
+
+    if (sectionSidebarOverlay) {
+      sectionSidebarOverlay.addEventListener('click', closeSectionSidebar);
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeSectionSidebar();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 1200) {
+        closeSectionSidebar();
+      }
+    });
+
+    const activePanel = document.querySelector('.tab-panel.active');
+    const activeTabName = activePanel ? activePanel.id.replace('-tab', '') : 'analysis';
+    syncActiveSection(activeTabName);
+    setQuickNavVisibility(sectionSidebar ? sectionSidebar.classList.contains('open') : false);
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         let refreshing = false;
 
+        const isInstalledApp =
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.matchMedia('(display-mode: fullscreen)').matches ||
+          window.navigator.standalone === true;
+
         function askToUpdate(waitingWorker) {
+          if (!isInstalledApp) return;
           if (!waitingWorker) return;
           const shouldUpdate = window.confirm('A new app update is available. Update now?');
           if (shouldUpdate) {
