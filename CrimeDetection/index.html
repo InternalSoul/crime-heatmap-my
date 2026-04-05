@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Malaysia Crime Dashboard</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="CrimeMap MY" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="prefetch" href="crime_heatmap.html" as="document">
+  <link rel="prefetch" href="crime_heatmap_preview.html" as="document">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f8fbff;
+      --bg-secondary: #edf5ff;
+      --card-bg: #ffffff;
+      --border-color: #e3ebf5;
+      --text-primary: #1f2b3a;
+      --text-secondary: #5f6f85;
+      --text-muted: #8b95a8;
+      --accent-1: #0f766e;
+      --accent-2: #15589b;
+      --accent-3: #d97706;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: 'Manrope', 'Segoe UI', Tahoma, sans-serif; color: var(--text-primary); }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #d9eeff 0%, var(--bg-secondary) 35%, var(--bg-primary) 100%);
+      padding: 20px 24px;
+    }
+    
+    .container { max-width: 1400px; margin: 0 auto; }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    
+    .header-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .title {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    .install-app-btn {
+      display: none;
+      margin-top: 10px;
+      border: 1px solid rgba(15, 118, 110, 0.35);
+      background: linear-gradient(135deg, rgba(15,118,110,0.95), rgba(21,88,155,0.95));
+      color: #fff;
+      font-family: 'Manrope', 'Segoe UI', Tahoma, sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 9px 14px;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(7, 37, 62, 0.14);
+    }
+    .install-app-btn:hover {
+      filter: brightness(1.05);
+    }
+    
+    .install-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(16px);
+      background: rgba(15, 118, 110, 0.96);
+      color: #fff;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 1400;
+    }
+    .install-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    
+    .stats-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      margin-bottom: 32px;
+    }
+    
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px 14px;
+      box-shadow: 0 2px 8px rgba(7, 37, 62, 0.06);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      transition: all 0.3s ease;
+      min-height: 120px;
+      gap: 8px;
+    }
+    
+    .stat-card:hover {
+      box-shadow: 0 8px 16px rgba(7, 37, 62, 0.1);
+      transform: translateY(-2px);
+    }
+    
+    .stat-card .label {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+    
+    .stat-card .value {
+      font-size: clamp(16px, 4vw, 24px);
+      font-weight: 800;
+      color: var(--accent-1);
+      line-height: 1.2;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    .stat-card.accent2 .value { color: var(--accent-2); }
+    .stat-card.accent3 .value { color: var(--accent-3); }
+    
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 28px 0 16px 0;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .section-title::before {
+      content: '';
+      width: 3px;
+      height: 22px;
+      background: var(--accent-1);
+      border-radius: 2px;
+    }
+    
+    .main-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+      align-items: start;
+    }
+    
+    .tabs-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px;
+      height: fit-content;
+      box-shadow: 0 10px 22px rgba(7, 37, 62, 0.08);
+      position: sticky;
+      top: 20px;
+    }
+
+    .tabs-sidebar-head {
+      margin-bottom: 4px;
+      padding: 6px 6px 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .tabs-sidebar-title {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-primary);
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    .tabs-sidebar-subtitle {
+      margin-top: 3px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    
+    .tab-btn {
+      padding: 11px 12px;
+      border: 1px solid #dbe7f2;
+      border-radius: 10px;
+      background: #f8fbff;
+      color: var(--text-secondary);
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-emoji {
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .tab-label {
+      line-height: 1;
+    }
+    
+    .tab-btn::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      background: linear-gradient(180deg, var(--accent-1), var(--accent-2));
+      transition: width 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      background: #eef6ff;
+      color: var(--text-primary);
+      border-color: #cfe0ef;
+    }
+    
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(15,118,110,0.12), rgba(21,88,155,0.14));
+      border-color: rgba(15, 118, 110, 0.5);
+      color: var(--accent-1);
+      box-shadow: 0 4px 10px rgba(15, 118, 110, 0.12);
+    }
+
+    .tab-btn.active::before {
+      width: 3px;
+    }
+    
+    .tabs-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .tab-panel {
+      display: none;
+      animation: fadeInTab 0.24s ease;
+    }
+    
+    .tab-panel.active {
+      display: block;
+    }
+
+    .tab-panel .section-title:first-child {
+      margin-top: 0;
+    }
+
+    .section-emoji {
+      font-size: 18px;
+      line-height: 1;
+      margin-right: 2px;
+    }
+
+    @keyframes fadeInTab {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .content-layout {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 28px;
+    }
+    
+    .content-layout.full { grid-template-columns: 1fr; }
+    
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 4px 12px rgba(7, 37, 62, 0.08);
+    }
+    
+    .panel h3 {
+      margin: 0 0 14px 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 10px;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 8px;
+    }
+    
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 13px;
+    }
+    
+    .list-item:last-child { border-bottom: none; }
+    
+    .item-name {
+      color: var(--text-primary);
+      font-weight: 600;
+      flex: 1;
+    }
+    
+    .item-value {
+      color: var(--accent-2);
+      font-weight: 800;
+      min-width: 80px;
+      text-align: right;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--border-color);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    
+    .preview-container {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      position: relative;
+      height: 480px;
+      background: linear-gradient(135deg, #f7fbff, #f0f7ff);
+    }
+    
+    .preview-container iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      pointer-events: none;
+    }
+    
+    .preview-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: end;
+      justify-content: start;
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(180deg, rgba(0,0,0,0.02) 50%, rgba(0,0,0,0.5) 100%);
+      padding: 18px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+    
+    .preview-overlay:hover {
+      background: linear-gradient(180deg, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.6) 100%);
+    }
+    
+    .three-column-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    
+    .search-box {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-family: 'Manrope', sans-serif;
+      font-size: 13px;
+      margin-bottom: 12px;
+      background: #f9fafb;
+      transition: border-color 0.2s;
+    }
+    
+    .search-box:focus {
+      outline: none;
+      border-color: var(--accent-1);
+      background: #fff;
+    }
+    
+    @media (max-width: 1200px) {
+      .content-layout { grid-template-columns: 1fr; }
+      .three-column-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    
+    @media (max-width: 768px) {
+      body { padding: 16px 20px; }
+      .title { font-size: 28px; }
+      .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .stat-card { padding: 14px 10px; min-height: 100px; font-size: 12px; }
+      .stat-card .label { font-size: 9px; }
+      .stat-card .value { font-size: clamp(14px, 3.5vw, 20px); }
+      .three-column-grid { grid-template-columns: 1fr; }
+      .chart-container { height: 250px; }
+      .preview-container { height: 360px; }
+      .main-layout { grid-template-columns: 1fr; gap: 12px; }
+      .tabs-sidebar {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        position: static;
+      }
+      .tabs-sidebar-head {
+        grid-column: 1 / -1;
+        margin-bottom: 2px;
+      }
+      .tabs-sidebar-title { font-size: 12px; }
+      .tabs-sidebar-subtitle { font-size: 10px; }
+      .tab-btn { padding: 9px 10px; font-size: 11px; min-width: 70px; justify-content: center; }
+      .tab-emoji { font-size: 13px; }
+    }
+    
+    @media (max-width: 480px) {
+      .main-layout { grid-template-columns: 1fr; }
+      .tabs-sidebar { gap: 6px; grid-template-columns: 1fr; }
+      .tab-btn { padding: 8px; font-size: 10px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-content">
+        <h1 class="title">Malaysia Crime Dashboard</h1>
+        <p class="subtitle">Comprehensive insights into crime trends across Malaysia with interactive visualizations</p>
+        <button id="install-app-btn" class="install-app-btn" type="button">Install App</button>
+      </div>
+    </div>
+    <div id="install-toast" class="install-toast">App installed successfully</div>
+
+    <!-- Top Stats -->
+    <div class="stats-grid" id="stats-container"></div>
+
+    <!-- Sidebar + Tabs Layout -->
+    <div class="main-layout">
+      <!-- Sidebar Navigation -->
+      <div class="tabs-sidebar">
+        <div class="tabs-sidebar-head">
+          <p class="tabs-sidebar-title">Explore Dashboard</p>
+          <div class="tabs-sidebar-subtitle">Choose a section view</div>
+        </div>
+        <button class="tab-btn active" onclick="switchTab('analysis', this)"><span class="tab-emoji">📊</span><span class="tab-label">Analysis</span></button>
+        <button class="tab-btn" onclick="switchTab('data', this)"><span class="tab-emoji">📋</span><span class="tab-label">Data</span></button>
+        <button class="tab-btn" onclick="switchTab('trends', this)"><span class="tab-emoji">📈</span><span class="tab-label">Trends</span></button>
+        <button class="tab-btn" onclick="switchTab('map', this)"><span class="tab-emoji">🗺️</span><span class="tab-label">Map</span></button>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tabs-content">
+        
+        <!-- Analysis Tab -->
+        <div id="analysis-tab" class="tab-panel active">
+          <div class="section-title"><span class="section-emoji">📊</span>Crime Distribution</div>
+          <div class="content-layout">
+            <div class="panel">
+              <h3>Top States</h3>
+              <div class="chart-container">
+                <canvas id="statesChart"></canvas>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Crime Types</h3>
+              <div class="chart-container">
+                <canvas id="typesChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-title"><span class="section-emoji">🧩</span>All Crime Types</div>
+          <div class="panel" style="margin-bottom: 28px;">
+            <h3>Crime Type Distribution (All)</h3>
+            <div style="position: relative; height: 400px;">
+              <canvas id="allTypesChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trends Tab -->
+        <div id="trends-tab" class="tab-panel">
+          <div class="section-title"><span class="section-emoji">📈</span>Yearly Trends</div>
+          <div class="panel" style="margin-bottom: 28px;">
+            <h3>Crime Trend Over Years</h3>
+            <div style="position: relative; height: 350px;">
+              <canvas id="yearlyChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Tab -->
+        <div id="data-tab" class="tab-panel">
+          <div class="section-title"><span class="section-emoji">🗂️</span>States & Districts</div>
+          <div class="content-layout">
+            <div class="panel">
+              <h3>All States</h3>
+              <input type="text" id="statesSearch" class="search-box" placeholder="Search states...">
+              <div id="all-states-list" style="max-height: 500px; overflow-y: auto;"></div>
+            </div>
+            <div class="panel">
+              <h3>All Districts</h3>
+              <input type="text" id="districtsSearch" class="search-box" placeholder="Search districts...">
+              <div id="all-districts-list" style="max-height: 500px; overflow-y: auto;"></div>
+            </div>
+          </div>
+
+          <div class="section-title"><span class="section-emoji">🧾</span>Additional Details</div>
+          <div class="three-column-grid">
+            <div class="panel">
+              <h3>Crime Categories</h3>
+              <div id="categories-list"></div>
+            </div>
+            <div class="panel">
+              <h3>Overview</h3>
+              <div id="overview-list"></div>
+            </div>
+            <div class="panel">
+              <h3>Year Statistics</h3>
+              <div id="years-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map Tab -->
+        <div id="map-tab" class="tab-panel">
+          <div class="section-title"><span class="section-emoji">🗺️</span>Interactive Map</div>
+          <div class="panel content-layout full" style="margin-bottom: 28px;">
+            <div style="grid-column: 1 / -1;">
+              <h3>Heatmap Preview</h3>
+              <div class="preview-container">
+                <iframe title="Heatmap Preview" src="crime_heatmap_preview.html" loading="lazy"></iframe>
+                <a class="preview-overlay" href="crime_heatmap.html">→ Open interactive heatmap</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const summary = {"total_crimes": 3633671, "total_points": 122228, "states_count": 14, "districts_count": 155, "types_count": 12, "years_count": 8, "top_state": "Selangor", "top_type": "Theft Vehicle Motorcycle", "top_states": [{"name": "Selangor", "value": 630509}, {"name": "W.P. Kuala Lumpur", "value": 310804}, {"name": "Johor", "value": 263852}, {"name": "Kedah", "value": 172740}, {"name": "Sarawak", "value": 172544}, {"name": "Sabah", "value": 155776}, {"name": "Pulau Pinang", "value": 146612}, {"name": "Perak", "value": 137408}], "top_types": [{"name": "Theft Vehicle Motorcycle", "value": 487977}, {"name": "Theft Other", "value": 439980}, {"name": "Break In", "value": 344202}, {"name": "Theft Vehicle Motorcar", "value": 141843}, {"name": "Robbery Gang Unarmed", "value": 133080}, {"name": "Causing Injury", "value": 106824}], "top_districts": [{"name": "Johor Bahru", "value": 51234}, {"name": "Petaling Jaya", "value": 46156}, {"name": "Klang", "value": 44680}, {"name": "Dang Wangi", "value": 39960}, {"name": "Kajang", "value": 38500}, {"name": "Gombak", "value": 38116}], "top_categories": [{"name": "Property", "value": 2897717}, {"name": "Assault", "value": 735954}], "all_states": [{"name": "Selangor", "value": 630509}, {"name": "W.P. Kuala Lumpur", "value": 310804}, {"name": "Johor", "value": 263852}, {"name": "Kedah", "value": 172740}, {"name": "Sarawak", "value": 172544}, {"name": "Sabah", "value": 155776}, {"name": "Pulau Pinang", "value": 146612}, {"name": "Perak", "value": 137408}, {"name": "Kelantan", "value": 101392}, {"name": "Negeri Sembilan", "value": 93568}, {"name": "Pahang", "value": 89540}, {"name": "Melaka", "value": 71920}, {"name": "Terengganu", "value": 59936}, {"name": "Perlis", "value": 16076}], "all_types": [{"name": "Theft Vehicle Motorcycle", "value": 487977}, {"name": "Theft Other", "value": 439980}, {"name": "Break In", "value": 344202}, {"name": "Theft Vehicle Motorcar", "value": 141843}, {"name": "Robbery Gang Unarmed", "value": 133080}, {"name": "Causing Injury", "value": 106824}, {"name": "Robbery Solo Unarmed", "value": 78267}, {"name": "Rape", "value": 41604}, {"name": "Theft Vehicle Lorry", "value": 34512}, {"name": "Murder", "value": 7386}, {"name": "Robbery Gang Armed", "value": 615}, {"name": "Robbery Solo Armed", "value": 201}], "all_districts": [{"name": "Johor Bahru", "value": 51234}, {"name": "Petaling Jaya", "value": 46156}, {"name": "Klang", "value": 44680}, {"name": "Dang Wangi", "value": 39960}, {"name": "Kajang", "value": 38500}, {"name": "Gombak", "value": 38116}, {"name": "Sentul", "value": 32912}, {"name": "Ampang Jaya", "value": 31386}, {"name": "Wangsa Maju", "value": 29930}, {"name": "Melaka Tengah", "value": 27530}, {"name": "Ipoh", "value": 26176}, {"name": "Kuala Muda", "value": 25904}, {"name": "Brickfields", "value": 25390}, {"name": "Serdang", "value": 24717}, {"name": "Seberang Perai Tengah", "value": 24358}, {"name": "Cheras", "value": 23358}, {"name": "Timur Laut", "value": 21604}, {"name": "Kota Setar", "value": 20952}, {"name": "Kota Bharu", "value": 20758}, {"name": "Seberang Perai", "value": 20310}, {"name": "Seri Alam", "value": 20014}, {"name": "Kota Kinabalu", "value": 19588}, {"name": "Kuching", "value": 19504}, {"name": "Subang Jaya", "value": 18798}, {"name": "Shah Alam", "value": 18638}, {"name": "Kuantan", "value": 18148}, {"name": "Seremban", "value": 17990}, {"name": "Padawan", "value": 12794}, {"name": "Miri", "value": 12380}, {"name": "Nilai", "value": 12330}, {"name": "Tawau", "value": 12230}, {"name": "Kulim", "value": 12052}, {"name": "Sepang", "value": 11592}, {"name": "Sg. Buloh", "value": 11092}, {"name": "Sibu", "value": 10932}, {"name": "Iskandar Puteri", "value": 9700}, {"name": "Kuala Terengganu", "value": 9248}, {"name": "Sandakan", "value": 8956}, {"name": "Taiping", "value": 8932}, {"name": "Kuala Langat", "value": 8768}, {"name": "Batu Pahat", "value": 8604}, {"name": "Kulaijaya", "value": 8454}, {"name": "Kubang Pasu", "value": 8370}, {"name": "Kluang", "value": 7946}, {"name": "Hilir Perak", "value": 7756}, {"name": "Hulu Selangor", "value": 7470}, {"name": "Kuala Selangor", "value": 7328}, {"name": "Bintulu", "value": 7278}, {"name": "Manjung", "value": 7210}, {"name": "Barat Daya", "value": 7034}, {"name": "Kota Tinggi", "value": 6566}, {"name": "Penampang", "value": 6534}, {"name": "Besut", "value": 5866}, {"name": "Langkawi", "value": 5470}, {"name": "Kota Samarahan", "value": 5436}, {"name": "Bentong", "value": 5426}, {"name": "Kemaman", "value": 5222}, {"name": "Alor Gajah", "value": 5090}, {"name": "Pasir Mas", "value": 4996}, {"name": "Port Dickson", "value": 4882}, {"name": "Pasir Puteh", "value": 4868}, {"name": "Kangar", "value": 4862}, {"name": "Baling", "value": 4820}, {"name": "Muar", "value": 4580}, {"name": "Segamat", "value": 4540}, {"name": "Semporna", "value": 4508}, {"name": "Sabak Bernam", "value": 4506}, {"name": "Tumpat", "value": 4352}, {"name": "Temerloh", "value": 4140}, {"name": "Dungun", "value": 4128}, {"name": "Bachok", "value": 3908}, {"name": "Sungai Buloh", "value": 3852}, {"name": "W.P. Putrajaya", "value": 3852}, {"name": "Lahad Datu", "value": 3832}, {"name": "Pontian", "value": 3592}, {"name": "Jempol", "value": 3484}, {"name": "Pendang", "value": 3448}, {"name": "Tanah Merah", "value": 3340}, {"name": "Jasin", "value": 3340}, {"name": "Papar", "value": 3218}, {"name": "Maran", "value": 3154}, {"name": "Kerian", "value": 3080}, {"name": "Machang", "value": 3058}, {"name": "W.P. Labuan", "value": 3006}, {"name": "Ledang", "value": 2828}, {"name": "Kuala Pilah", "value": 2788}, {"name": "Rompin", "value": 2728}, {"name": "Tampin", "value": 2592}, {"name": "Keningau", "value": 2570}, {"name": "Jerantut", "value": 2528}, {"name": "Tapah", "value": 2516}, {"name": "Pekan", "value": 2452}, {"name": "Gua Musang", "value": 2362}, {"name": "Marang", "value": 2352}, {"name": "Kuala Krai", "value": 2344}, {"name": "Kampar", "value": 2314}, {"name": "Sarikei", "value": 2146}, {"name": "Bera", "value": 2110}, {"name": "Perak Tengah", "value": 2006}, {"name": "Nusajaya", "value": 1972}, {"name": "Serian", "value": 1934}, {"name": "Kota Belud", "value": 1930}, {"name": "Arau", "value": 1902}, {"name": "Mersing", "value": 1896}, {"name": "Yan", "value": 1872}, {"name": "Hulu Terengganu", "value": 1870}, {"name": "Kuala Kangsar", "value": 1848}, {"name": "Tanjong Malim", "value": 1836}, {"name": "Beaufort", "value": 1774}, {"name": "Rembau", "value": 1696}, {"name": "Sri Aman", "value": 1664}, {"name": "Padang Terap", "value": 1650}, {"name": "Raub", "value": 1618}, {"name": "Sungai Siput", "value": 1604}, {"name": "Kuala Lipis", "value": 1598}, {"name": "Batu Gajah", "value": 1510}, {"name": "Tuaran", "value": 1464}, {"name": "Kota Marudu", "value": 1378}, {"name": "Setiu", "value": 1282}, {"name": "Padang Besar", "value": 1274}, {"name": "Marudi", "value": 1220}, {"name": "Ranau", "value": 1204}, {"name": "Betong", "value": 1178}, {"name": "Sipitang", "value": 1138}, {"name": "Gerik", "value": 1132}, {"name": "Kota Kinabatangan", "value": 1126}, {"name": "Mukah", "value": 1124}, {"name": "Beluran", "value": 1062}, {"name": "Jelebu", "value": 1022}, {"name": "Sik", "value": 974}, {"name": "Bau", "value": 960}, {"name": "Kunak", "value": 948}, {"name": "Lundu", "value": 942}, {"name": "Cameron Highlands", "value": 868}, {"name": "Limbang", "value": 780}, {"name": "Kudat", "value": 740}, {"name": "Jeli", "value": 710}, {"name": "Kapit", "value": 710}, {"name": "Meradong", "value": 688}, {"name": "Tenom", "value": 682}, {"name": "Simunjan", "value": 670}, {"name": "Belaga", "value": 654}, {"name": "Lawas", "value": 642}, {"name": "Saratok", "value": 616}, {"name": "Selama", "value": 554}, {"name": "Bandar Bharu", "value": 528}, {"name": "Matu Daro", "value": 436}, {"name": "Lubok Antu", "value": 374}, {"name": "Tatau", "value": 332}, {"name": "Bandar Baharu", "value": 330}, {"name": "Dalat", "value": 308}, {"name": "Kanowit", "value": 254}, {"name": "Pengkalan Hulu", "value": 230}, {"name": "Julau", "value": 174}, {"name": "Song", "value": 142}], "yearly": [{"year": 2016, "value": 674130}, {"year": 2017, "value": 595020}, {"year": 2018, "value": 531972}, {"year": 2019, "value": 500736}, {"year": 2020, "value": 394058}, {"year": 2021, "value": 318213}, {"year": 2022, "value": 304878}, {"year": 2023, "value": 314664}]};
+
+    // Generate Stat Cards
+    function renderStats() {
+      const stats = [
+        { label: 'Total Crimes', value: summary.total_crimes.toLocaleString(), class: '' },
+        { label: 'Heat Points', value: summary.total_points.toLocaleString(), class: 'accent2' },
+        { label: 'States', value: summary.states_count, class: 'accent3' },
+        { label: 'Districts', value: summary.districts_count, class: '' },
+        { label: 'Crime Types', value: summary.types_count, class: 'accent2' },
+        { label: 'Years Covered', value: summary.years_count, class: 'accent3' },
+        { label: 'Top State', value: summary.top_state, class: '' },
+        { label: 'Top Crime', value: summary.top_type, class: 'accent2' },
+      ];
+
+      document.getElementById('stats-container').innerHTML = stats
+        .map(stat => `<div class="stat-card ${stat.class}"><div class="label">${stat.label}</div><div class="value">${stat.value}</div></div>`)
+        .join('');
+    }
+
+    // States Chart
+    const statesCtx = document.getElementById('statesChart').getContext('2d');
+    new Chart(statesCtx, {
+      type: 'bar',
+      data: {
+        labels: summary.top_states.map(s => s.name),
+        datasets: [{
+          label: 'Total Crimes',
+          data: summary.top_states.map(s => s.value),
+          backgroundColor: [
+            'rgba(15, 118, 110, 0.8)',
+            'rgba(15, 118, 110, 0.65)',
+            'rgba(21, 88, 155, 0.8)',
+            'rgba(217, 119, 6, 0.8)',
+            'rgba(21, 88, 155, 0.65)',
+            'rgba(217, 119, 6, 0.65)',
+            'rgba(15, 118, 110, 0.5)',
+            'rgba(21, 88, 155, 0.5)',
+          ],
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 } } },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      }
+    });
+
+    // Crime Types Chart
+    const typesCtx = document.getElementById('typesChart').getContext('2d');
+    
+    // Shorten long display names
+    const shortenLabel = (label) => {
+      if (label.includes('Theft Vehicle Motorcycle')) return 'Vehicle Motorcycle';
+      if (label.includes('Theft Vehicle')) return 'Theft Vehicle';
+      if (label.length > 20) return label.substring(0, 17) + '...';
+      return label;
+    };
+    
+    new Chart(typesCtx, {
+      type: 'doughnut',
+      data: {
+        labels: summary.top_types.map(t => shortenLabel(t.name)),
+        datasets: [{
+          data: summary.top_types.map(t => t.value),
+          backgroundColor: [
+            'rgba(15, 118, 110, 0.85)',
+            'rgba(21, 88, 155, 0.85)',
+            'rgba(217, 119, 6, 0.85)',
+            'rgba(239, 68, 68, 0.85)',
+            'rgba(16, 185, 129, 0.85)',
+            'rgba(168, 85, 247, 0.85)',
+          ],
+          borderColor: '#fff',
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { 
+            position: 'bottom', 
+            labels: { 
+              font: { size: 10 }, 
+              padding: 10, 
+              usePointStyle: true,
+              maxWidth: 80,
+              boxWidth: 12
+            } 
+          }
+        }
+      }
+    });
+
+    // Yearly Trend Chart
+    const yearlyCtx = document.getElementById('yearlyChart').getContext('2d');
+    new Chart(yearlyCtx, {
+      type: 'line',
+      data: {
+        labels: summary.yearly.map(y => y.year),
+        datasets: [{
+          label: 'Total Crimes',
+          data: summary.yearly.map(y => y.value),
+          borderColor: 'rgba(15, 118, 110, 1)',
+          backgroundColor: 'rgba(15, 118, 110, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          pointRadius: 5,
+          pointBackgroundColor: 'rgba(15, 118, 110, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          tension: 0.3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 } } },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      }
+    });
+
+    // All Crime Types Bar Chart
+    const allTypesCtx = document.getElementById('allTypesChart').getContext('2d');
+    const allTypesData = summary.all_types.slice(0, 20); // Show top 20 for readability
+    new Chart(allTypesCtx, {
+      type: 'bar',
+      data: {
+        labels: allTypesData.map(t => t.name),
+        datasets: [{
+          label: 'Total Crimes',
+          data: allTypesData.map(t => t.value),
+          backgroundColor: allTypesData.map((_, i) => {
+            const colors = ['rgba(15, 118, 110, 0.8)', 'rgba(21, 88, 155, 0.8)', 'rgba(217, 119, 6, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(16, 185, 129, 0.8)', 'rgba(168, 85, 247, 0.8)'];
+            return colors[i % colors.length];
+          }),
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 } } },
+          y: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      }
+    });
+
+    // Render Lists with Search
+    function renderLists() {
+      const getMaxValue = (arr) => Math.max(...arr.map(item => item.value), 1);
+      let filteredStates = [...summary.all_states];
+      let filteredDistricts = [...summary.all_districts];
+
+      const renderStatesList = () => {
+        document.getElementById('all-states-list').innerHTML = filteredStates
+          .map(item => {
+            const percent = Math.round((item.value / getMaxValue(summary.all_states)) * 100);
+            return `<div class="list-item">
+              <span class="item-name">${item.name}</span>
+              <span class="item-value">${item.value.toLocaleString()}</span>
+              <div style="width: 40px; margin-left: 8px;"><div class="progress-bar"><div class="progress-fill" style="width: ${percent}%"></div></div></div>
+            </div>`;
+          })
+          .join('');
+      };
+
+      const renderDistrictsList = () => {
+        document.getElementById('all-districts-list').innerHTML = filteredDistricts
+          .map(item => {
+            const percent = Math.round((item.value / getMaxValue(summary.all_districts)) * 100);
+            return `<div class="list-item">
+              <span class="item-name">${item.name}</span>
+              <span class="item-value">${item.value.toLocaleString()}</span>
+              <div style="width: 40px; margin-left: 8px;"><div class="progress-bar"><div class="progress-fill" style="width: ${percent}%"></div></div></div>
+            </div>`;
+          })
+          .join('');
+      };
+
+      // Search handlers
+      document.getElementById('statesSearch').addEventListener('keyup', (e) => {
+        const query = e.target.value.toLowerCase();
+        filteredStates = summary.all_states.filter(item => item.name.toLowerCase().includes(query));
+        renderStatesList();
+      });
+
+      document.getElementById('districtsSearch').addEventListener('keyup', (e) => {
+        const query = e.target.value.toLowerCase();
+        filteredDistricts = summary.all_districts.filter(item => item.name.toLowerCase().includes(query));
+        renderDistrictsList();
+      });
+
+      // Crime Categories
+      const maxCategory = getMaxValue(summary.top_categories);
+      document.getElementById('categories-list').innerHTML = summary.top_categories
+        .map(item => {
+          const percent = Math.round((item.value / maxCategory) * 100);
+          return `<div class="list-item">
+            <span class="item-name">${item.name}</span>
+            <span class="item-value">${item.value.toLocaleString()}</span>
+            <div style="width: 40px; margin-left: 8px;"><div class="progress-bar"><div class="progress-fill" style="width: ${percent}%"></div></div></div>
+          </div>`;
+        })
+        .join('');
+
+      // Overview
+      document.getElementById('overview-list').innerHTML = `
+        <div class="list-item"><span class="item-name">States Covered</span><span class="item-value">${summary.states_count}</span></div>
+        <div class="list-item"><span class="item-name">Districts Covered</span><span class="item-value">${summary.districts_count}</span></div>
+        <div class="list-item"><span class="item-name">Crime Types</span><span class="item-value">${summary.types_count}</span></div>
+        <div class="list-item"><span class="item-name">Year Range</span><span class="item-value">${summary.yearly[0]?.year} - ${summary.yearly[summary.yearly.length - 1]?.year}</span></div>
+      `;
+
+      // Years list
+      document.getElementById('years-list').innerHTML = summary.yearly
+        .map(item => `<div class="list-item"><span class="item-name">${item.year}</span><span class="item-value">${item.value.toLocaleString()}</span></div>`)
+        .join('');
+
+      // Initial render
+      renderStatesList();
+      renderDistrictsList();
+    }
+
+    renderStats();
+    renderLists();
+
+    // Tab Switching Function
+    function switchTab(tabName, btn) {
+      // Hide all tab panels
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      
+      // Remove active class from all buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Show selected tab
+      document.getElementById(tabName + '-tab').classList.add('active');
+      
+      // Add active class to clicked button
+      if (btn) {
+        btn.classList.add('active');
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+
+    let deferredInstallPrompt = null;
+    const installBtn = document.getElementById('install-app-btn');
+    const installToast = document.getElementById('install-toast');
+
+    function showInstallToast() {
+      if (!installToast) return;
+      installToast.classList.add('show');
+      setTimeout(() => installToast.classList.remove('show'), 2200);
+    }
+
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      if (installBtn) installBtn.style.display = 'inline-flex';
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      if (installBtn) installBtn.style.display = 'none';
+      showInstallToast();
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener('click', async () => {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+          deferredInstallPrompt = null;
+          installBtn.style.display = 'none';
+          return;
+        }
+        alert('Use your browser menu and tap "Add to Home Screen" to install this app.');
+      });
+    }
+  </script>
+</body>
+</html>
