@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crime Detection Studio</title>
+  <meta name="theme-color" content="#0f766e" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-main: #f3f9ff;
+      --bg-layer: #d7ecff;
+      --card: #ffffff;
+      --line: #d7e2ee;
+      --text-strong: #12243a;
+      --text-soft: #58708d;
+      --accent-a: #0f766e;
+      --accent-b: #145ea8;
+      --accent-warn: #ea580c;
+      --ok: #16a34a;
+      --danger: #dc2626;
+      --shadow: 0 12px 30px rgba(13, 44, 69, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', 'Segoe UI', Tahoma, sans-serif;
+      color: var(--text-strong);
+      background:
+        radial-gradient(circle at 14% -8%, rgba(20, 94, 168, 0.2), transparent 50%),
+        radial-gradient(circle at 90% 12%, rgba(15, 118, 110, 0.2), transparent 52%),
+        linear-gradient(145deg, var(--bg-layer), var(--bg-main));
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 20px;
+      animation: appear 0.42s ease;
+    }
+
+    @keyframes appear {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .topbar {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .back-link {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      text-decoration: none;
+      color: var(--accent-b);
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid #d6e4f2;
+      border-radius: 999px;
+      padding: 9px 14px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .back-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(20, 94, 168, 0.16);
+    }
+
+    .mode-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      background: rgba(15, 118, 110, 0.1);
+      color: #0f5f59;
+      border: 1px solid rgba(15, 118, 110, 0.25);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .hero {
+      background: linear-gradient(120deg, rgba(255,255,255,0.96), rgba(239,248,255,0.98));
+      border: 1px solid #dce8f4;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      right: -60px;
+      top: -70px;
+      background: radial-gradient(circle, rgba(20, 94, 168, 0.16), rgba(20, 94, 168, 0));
+      pointer-events: none;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: 'Space Grotesk', 'Outfit', sans-serif;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.05;
+      letter-spacing: -0.6px;
+      background: linear-gradient(135deg, #0f766e, #145ea8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--text-soft);
+      font-weight: 500;
+      max-width: 76ch;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 8px 20px rgba(10, 52, 85, 0.08);
+    }
+
+    .panel-title {
+      margin: 0 0 10px;
+      font-size: 18px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dropzone {
+      border: 2px dashed #c4d9ee;
+      border-radius: 14px;
+      padding: 22px;
+      text-align: center;
+      background: linear-gradient(180deg, #fbfdff, #f4f9ff);
+      transition: border-color 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+    }
+
+    .dropzone.drag {
+      border-color: #1f7bcc;
+      background: linear-gradient(180deg, #f2f8ff, #eaf4ff);
+    }
+
+    .dropzone strong {
+      display: block;
+      font-size: 17px;
+      margin-bottom: 4px;
+    }
+
+    .dropzone p {
+      margin: 0;
+      color: var(--text-soft);
+    }
+
+    .controls {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .action-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #d8e7f5;
+      background: #f6fbff;
+      color: #1f466d;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    button {
+      border: 1px solid #cde0f3;
+      border-radius: 12px;
+      background: #f4f8ff;
+      color: #17375a;
+      font-family: 'Outfit', 'Segoe UI', Tahoma, sans-serif;
+      font-weight: 700;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(20, 94, 168, 0.14);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0f766e, #145ea8);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .preview {
+      margin-top: 12px;
+      border: 1px solid #d6e5f3;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f7fbff;
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .preview img,
+    .preview video,
+    .preview canvas {
+      width: 100%;
+      max-height: 440px;
+      object-fit: contain;
+      display: block;
+      background: #ecf4ff;
+    }
+
+    .preview-note {
+      color: #6d8198;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      padding: 18px;
+    }
+
+    .camera-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .camera-box {
+      position: absolute;
+      border: 3px solid #17c964;
+      border-radius: 14px;
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.12),
+        0 0 0 9999px rgba(0, 0, 0, 0.06);
+      transition: all 0.18s ease;
+    }
+
+    .camera-box.high { border-color: #dc2626; }
+    .camera-box.medium { border-color: #f59e0b; }
+    .camera-box.low { border-color: #16a34a; }
+    .camera-box.person { border-color: #2563eb; }
+    .camera-box.bag { border-color: #d97706; }
+    .camera-box.weapon { border-color: #dc2626; }
+    .camera-box.other { border-color: #0f766e; }
+
+    .camera-label {
+      position: absolute;
+      left: -1px;
+      top: -32px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: min(280px, 72vw);
+      padding: 7px 10px;
+      border-radius: 10px 10px 10px 2px;
+      background: rgba(6, 17, 30, 0.9);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .camera-label span:last-child {
+      opacity: 0.76;
+      font-weight: 700;
+    }
+
+    .camera-label.person { background: rgba(25, 59, 120, 0.92); }
+    .camera-label.bag { background: rgba(110, 62, 10, 0.92); }
+    .camera-label.weapon { background: rgba(122, 24, 24, 0.94); }
+    .camera-label.other { background: rgba(8, 67, 62, 0.92); }
+
+    .results {
+      display: grid;
+      gap: 10px;
+    }
+
+    .score {
+      background: linear-gradient(135deg, #f7fbff, #eef5ff);
+      border: 1px solid #d8e6f3;
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .score-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .score-label {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      color: #2f5578;
+    }
+
+    .score-value {
+      margin: 0;
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .meter {
+      height: 12px;
+      background: #dfeaf5;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .meter > span {
+      display: block;
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #16a34a 0%, #f59e0b 60%, #dc2626 100%);
+      transition: width 0.3s ease;
+    }
+
+    .verdict {
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #dde7f2;
+      background: #f9fcff;
+      font-weight: 700;
+    }
+
+    .flags {
+      margin: 0;
+      padding-left: 18px;
+      color: #294666;
+      display: grid;
+      gap: 6px;
+    }
+
+    .timeline {
+      margin: 0;
+      padding-left: 0;
+      list-style: none;
+      max-height: 240px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+    }
+
+    .timeline li {
+      background: #f6fbff;
+      border: 1px solid #d9e8f5;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+      color: #21415f;
+    }
+
+    .timeline strong {
+      color: #17395d;
+    }
+
+    .status-line {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #486781;
+      font-weight: 600;
+      min-height: 1.2em;
+    }
+
+    .small {
+      color: #6d839b;
+      font-size: 12px;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid;
+    }
+
+    .tag.low { color: #116638; background: #e9f9ef; border-color: #bce8cc; }
+    .tag.medium { color: #8a4d06; background: #fff7e7; border-color: #f5dbab; }
+    .tag.high { color: #8a1515; background: #ffecec; border-color: #f6c1c1; }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <a class="back-link" href="index.html">← Back to dashboard</a>
+      <div class="mode-pills">
+        <span class="pill">🖼️ Image Analysis</span>
+        <span class="pill">🎬 Video Scan</span>
+        <span class="pill">📷 Camera Capture</span>
+        <span class="pill">⚠️ Early Warning</span>
+      </div>
+    </div>
+
+    <section class="hero">
+      <h1>Crime Detection Studio</h1>
+      <p class="subtitle">
+        Upload an image or video and run a fast screening pass for suspicious visual cues.
+        This page is a prototype for triage support and should be combined with manual review.
+      </p>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <h2 class="panel-title">📤 Media Input</h2>
+        <label id="dropzone" class="dropzone" for="mediaInput">
+          <strong>Drop an image/video here</strong>
+          <p>or click to browse: JPG, PNG, MP4, WebM</p>
+        </label>
+        <input id="mediaInput" type="file" accept="image/*,video/*" hidden />
+
+        <div class="controls">
+          <button id="analyzeBtn" class="btn-primary" type="button" disabled>Analyze Media</button>
+          <button id="openCameraBtn" type="button">Open Camera</button>
+          <button id="captureBtn" type="button" disabled>Capture Frame</button>
+          <button id="stopCameraBtn" type="button" disabled>Stop Camera</button>
+          <button id="clearBtn" type="button">Clear</button>
+        </div>
+
+        <div id="preview" class="preview">
+          <div class="preview-note">No media loaded yet.</div>
+        </div>
+
+        <div id="statusLine" class="status-line"></div>
+        <p class="small">
+          Detection method combines color-intensity cues, frame-motion bursts, and contrast shifts.
+          It is useful for alerts but not a legal-grade classifier.
+        </p>
+      </section>
+
+      <section class="panel results">
+        <h2 class="panel-title">📌 Detection Output</h2>
+
+        <article class="score">
+          <div class="score-top">
+            <p class="score-label">RISK SCORE</p>
+            <p id="scoreValue" class="score-value">0%</p>
+          </div>
+          <div class="meter"><span id="scoreBar"></span></div>
+          <div id="riskTag" class="tag low" style="margin-top:10px;">LOW RISK</div>
+        </article>
+
+        <article id="verdict" class="verdict">
+          Upload media and run analysis to generate a result.
+        </article>
+
+        <article>
+          <h3 style="margin: 0 0 8px;">Classified Action</h3>
+          <div id="actionChip" class="action-chip">No action classified yet.</div>
+        </article>
+
+        <article>
+          <h3 style="margin: 0 0 8px;">Detected Signals</h3>
+          <ul id="flags" class="flags">
+            <li>No signals yet.</li>
+          </ul>
+        </article>
+
+        <article>
+          <h3 style="margin: 0 0 8px;">Video Event Timeline</h3>
+          <ul id="timeline" class="timeline">
+            <li>Timeline is available for video inputs after analysis.</li>
+          </ul>
+        </article>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const mediaInput = document.getElementById('mediaInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const openCameraBtn = document.getElementById('openCameraBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const stopCameraBtn = document.getElementById('stopCameraBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const preview = document.getElementById('preview');
+    const dropzone = document.getElementById('dropzone');
+    const statusLine = document.getElementById('statusLine');
+
+    const scoreValue = document.getElementById('scoreValue');
+    const scoreBar = document.getElementById('scoreBar');
+    const verdict = document.getElementById('verdict');
+    const flagsEl = document.getElementById('flags');
+    const timelineEl = document.getElementById('timeline');
+    const riskTag = document.getElementById('riskTag');
+    const actionChip = document.getElementById('actionChip');
+
+    let currentUrl = '';
+    let currentFile = null;
+    let currentType = '';
+    let activeStream = null;
+    let cameraTrackFrame = null;
+    let cameraOverlay = null;
+    let currentBoxUpdateToken = 0;
+    let liveAnalyzeInFlight = false;
+    let lastLiveAnalyzeAt = 0;
+    let lastLiveYoloDetectionsAt = 0;
+    let lastLiveDetectionSnapshot = null;
+    const liveAnalyzeIntervalMs = 700;
+
+    const actionProfiles = {
+      routine_activity: { label: 'Routine Activity', riskScore: 18 },
+      suspicious_loitering: { label: 'Suspicious Loitering', riskScore: 44 },
+      rapid_running: { label: 'Rapid Running', riskScore: 56 },
+      group_tension: { label: 'Group Tension Pattern', riskScore: 66 },
+      aggressive_confrontation: { label: 'Aggressive Confrontation', riskScore: 88 },
+      low_visibility_unclear: { label: 'Low Visibility / Unclear Action', riskScore: 52 }
+    };
+
+    const apiBase = 'http://127.0.0.1:5001';
+
+    function formatActionName(key) {
+      const profile = actionProfiles[key];
+      return profile ? profile.label : key.replace(/_/g, ' ');
+    }
+
+    function setAction(actionResult) {
+      if (!actionResult) {
+        actionChip.textContent = 'No action classified yet.';
+        return;
+      }
+      const confidence = Math.round(actionResult.confidence * 100);
+      actionChip.textContent =
+        formatActionName(actionResult.action) +
+        ' • Confidence ' + confidence + '% • Action Risk ' + Math.round(actionResult.riskScore) + '%';
+    }
+
+    function updateRiskUI(score, label) {
+      const bounded = Math.max(0, Math.min(100, Math.round(score)));
+      scoreValue.textContent = bounded + '%';
+      scoreBar.style.width = bounded + '%';
+
+      riskTag.classList.remove('low', 'medium', 'high');
+      if (bounded >= 70) {
+        riskTag.classList.add('high');
+      } else if (bounded >= 40) {
+        riskTag.classList.add('medium');
+      } else {
+        riskTag.classList.add('low');
+      }
+      riskTag.textContent = label;
+    }
+
+    function setStatus(text) {
+      statusLine.textContent = text || '';
+    }
+
+    function ensureCameraOverlay() {
+      if (cameraOverlay && cameraOverlay.isConnected) {
+        return cameraOverlay;
+      }
+
+      cameraOverlay = document.createElement('div');
+      cameraOverlay.className = 'camera-overlay';
+      preview.appendChild(cameraOverlay);
+      return cameraOverlay;
+    }
+
+    function clearCameraOverlay() {
+      if (cameraOverlay) {
+        cameraOverlay.remove();
+        cameraOverlay = null;
+      }
+    }
+
+    function buildCenterFallbackBox() {
+      return {
+        x: 30,
+        y: 18,
+        width: 40,
+        height: 64,
+        confidence: 0.55,
+        avgBrightness: 120,
+        contrast: 40,
+        redRatio: 0.02
+      };
+    }
+
+    function renderCameraBox(box, actionResult) {
+      const overlay = ensureCameraOverlay();
+      overlay.innerHTML = '';
+
+      if (!box) {
+        return;
+      }
+
+      const boxEl = document.createElement('div');
+      boxEl.className = 'camera-box ' + (actionResult && actionResult.riskScore >= 70 ? 'high' : actionResult && actionResult.riskScore >= 40 ? 'medium' : 'low');
+      boxEl.style.left = box.x + '%';
+      boxEl.style.top = box.y + '%';
+      boxEl.style.width = box.width + '%';
+      boxEl.style.height = box.height + '%';
+
+      const label = document.createElement('div');
+      label.className = 'camera-label';
+      const actionName = actionResult ? formatActionName(actionResult.action) : 'Detected Object';
+      const confidence = actionResult ? Math.round(actionResult.confidence * 100) + '%' : 'Tracking';
+      const risk = actionResult ? Math.round(actionResult.riskScore) + '%' : '0%';
+      label.innerHTML = '<span>' + actionName + '</span><span>' + confidence + ' • Risk ' + risk + '</span>';
+
+      boxEl.appendChild(label);
+      overlay.appendChild(boxEl);
+    }
+
+    function renderDetectionBoxes(detections, imageSize, actionResult) {
+      const overlay = ensureCameraOverlay();
+      overlay.innerHTML = '';
+
+      if (!Array.isArray(detections) || !detections.length) {
+        return false;
+      }
+
+      const width = imageSize && imageSize.width ? imageSize.width : 1;
+      const height = imageSize && imageSize.height ? imageSize.height : 1;
+      const riskClass = actionResult && actionResult.riskScore >= 70 ? 'high' : actionResult && actionResult.riskScore >= 40 ? 'medium' : 'low';
+
+      detections.forEach(detection => {
+        if (!Array.isArray(detection.box) || detection.box.length < 4) {
+          return;
+        }
+
+        const [x1, y1, x2, y2] = detection.box;
+        const left = Math.max(0, (x1 / width) * 100);
+        const top = Math.max(0, (y1 / height) * 100);
+        const boxWidth = Math.max(1, Math.min(100 - left, ((x2 - x1) / width) * 100));
+        const boxHeight = Math.max(1, Math.min(100 - top, ((y2 - y1) / height) * 100));
+
+        const boxEl = document.createElement('div');
+        boxEl.className = 'camera-box ' + riskClass;
+        boxEl.style.left = left + '%';
+        boxEl.style.top = top + '%';
+        boxEl.style.width = boxWidth + '%';
+        boxEl.style.height = boxHeight + '%';
+
+        const label = document.createElement('div');
+        const category = getDetectionCategory(detection.class_name || detection.display_name || '');
+        boxEl.className = 'camera-box ' + category + ' ' + riskClass;
+        const name = (detection.class_name || detection.display_name || 'object').replace(/_/g, ' ');
+        const confidence = Math.round((detection.confidence || 0) * 100) + '%';
+        const risk = actionResult ? Math.round(actionResult.riskScore) + '%' : '0%';
+        label.innerHTML = '<span>' + name + '</span><span>' + confidence + ' • Risk ' + risk + '</span>';
+
+        boxEl.appendChild(label);
+        label.className = 'camera-label ' + category;
+        overlay.appendChild(boxEl);
+      });
+
+      return true;
+    }
+
+    function getDetectionCategory(name) {
+      const normalized = String(name || '')
+        .toLowerCase()
+        .trim()
+        .replace(/[\s-]+/g, '_');
+      const label = normalized.replace(/_\d+$/, '');
+
+      const personLabels = new Set(['person']);
+      const bagLabels = new Set(['bag', 'handbag', 'backpack', 'suitcase']);
+      const weaponLabels = new Set(['knife', 'gun', 'pistol', 'rifle', 'baseball_bat', 'bat', 'scissors']);
+
+      if (personLabels.has(label)) {
+        return 'person';
+      }
+      if (bagLabels.has(label)) {
+        return 'bag';
+      }
+      if (weaponLabels.has(label)) {
+        return 'weapon';
+      }
+      return 'other';
+    }
+
+    function findFocusBoxFromImageData(imageData) {
+      const { data, width, height } = imageData;
+      const cellsX = 8;
+      const cellsY = 6;
+      const cellWidth = Math.max(1, Math.floor(width / cellsX));
+      const cellHeight = Math.max(1, Math.floor(height / cellsY));
+
+      let totalBrightness = 0;
+      let totalContrast = 0;
+      let pixels = 0;
+
+      const cellStats = [];
+
+      for (let cy = 0; cy < cellsY; cy += 1) {
+        for (let cx = 0; cx < cellsX; cx += 1) {
+          let cellBrightness = 0;
+          let cellContrast = 0;
+          let cellRed = 0;
+          let cellPixels = 0;
+
+          const startX = cx * cellWidth;
+          const startY = cy * cellHeight;
+          const endX = cx === cellsX - 1 ? width : startX + cellWidth;
+          const endY = cy === cellsY - 1 ? height : startY + cellHeight;
+
+          for (let y = startY; y < endY; y += 1) {
+            for (let x = startX; x < endX; x += 1) {
+              const index = (y * width + x) * 4;
+              const r = data[index];
+              const g = data[index + 1];
+              const b = data[index + 2];
+              const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+              const max = Math.max(r, g, b);
+              const min = Math.min(r, g, b);
+
+              cellBrightness += lum;
+              cellContrast += max - min;
+              if (r > g * 1.22 && r > b * 1.22 && r > 80) {
+                cellRed += 1;
+              }
+              cellPixels += 1;
+            }
+          }
+
+          const avgBrightness = cellBrightness / cellPixels;
+          const avgContrast = cellContrast / cellPixels;
+          const redRatio = cellRed / cellPixels;
+
+          totalBrightness += cellBrightness;
+          totalContrast += cellContrast;
+          pixels += cellPixels;
+
+          cellStats.push({
+            cx,
+            cy,
+            score: avgBrightness * 0.16 + avgContrast * 1.1 + redRatio * 180,
+            avgBrightness,
+            avgContrast,
+            redRatio,
+            cellPixels
+          });
+        }
+      }
+
+      const globalBrightness = totalBrightness / pixels;
+      const globalContrast = totalContrast / pixels;
+
+      let bestCell = null;
+      for (const cell of cellStats) {
+        const deviation = Math.abs(cell.avgBrightness - globalBrightness) * 0.65;
+        const contrastLift = Math.max(0, cell.avgContrast - globalContrast) * 0.9;
+        const saliency = cell.score + deviation + contrastLift;
+        if (!bestCell || saliency > bestCell.saliency) {
+          bestCell = { ...cell, saliency };
+        }
+      }
+
+      if (!bestCell) {
+        return null;
+      }
+
+      const expandX = 1.4;
+      const expandY = 1.45;
+      const boxX = Math.max(0, (bestCell.cx * cellWidth - cellWidth * 0.2) / width * 100);
+      const boxY = Math.max(0, (bestCell.cy * cellHeight - cellHeight * 0.2) / height * 100);
+      const boxW = Math.min(100 - boxX, (cellWidth * expandX * 2) / width * 100);
+      const boxH = Math.min(100 - boxY, (cellHeight * expandY * 2) / height * 100);
+
+      const confidence = Math.max(0.55, Math.min(0.97, 0.45 + bestCell.saliency / 320));
+      return {
+        x: boxX,
+        y: boxY,
+        width: boxW,
+        height: boxH,
+        confidence,
+        avgBrightness: globalBrightness,
+        contrast: globalContrast,
+        redRatio: bestCell.redRatio
+      };
+    }
+
+    function classifyBoxFromMetrics(metrics, motionShift) {
+      return classifyAction(metrics, motionShift);
+    }
+
+    async function updateLiveCameraBox(videoEl, frameToken) {
+      if (!activeStream || currentType !== 'camera/live') {
+        return;
+      }
+
+      await new Promise(resolve => {
+        if (videoEl.readyState >= 2) {
+          resolve();
+          return;
+        }
+        videoEl.addEventListener('loadeddata', resolve, { once: true });
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = videoEl.videoWidth || 640;
+      canvas.height = videoEl.videoHeight || 360;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      const tick = async () => {
+        if (frameToken !== currentBoxUpdateToken || currentType !== 'camera/live' || !activeStream) {
+          return;
+        }
+
+        if (videoEl.readyState >= 2) {
+          ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          const now = performance.now();
+          // Prefer showing the last YOLO-labeled detections whenever available.
+          if (lastLiveDetectionSnapshot && lastLiveDetectionSnapshot.detections && lastLiveDetectionSnapshot.detections.length) {
+            renderDetectionBoxes(
+              lastLiveDetectionSnapshot.detections,
+              lastLiveDetectionSnapshot.imageSize,
+              lastLiveDetectionSnapshot.actionResult
+            );
+          } else {
+            const liveMetrics = computeFrameMetrics(imageData);
+            const liveMotionShift = liveMetrics.avgBrightness > 0 ? Math.min(24, Math.abs(liveMetrics.contrast - 42) * 0.35) : 0;
+            const liveActionResult = classifyBoxFromMetrics(liveMetrics, liveMotionShift);
+            const liveFallbackBox = findFocusBoxFromImageData(imageData);
+            if (liveFallbackBox) {
+              renderCameraBox(liveFallbackBox, liveActionResult);
+            } else {
+              renderCameraBox(buildCenterFallbackBox(), liveActionResult);
+            }
+          }
+
+          if (!liveAnalyzeInFlight && now - lastLiveAnalyzeAt >= liveAnalyzeIntervalMs) {
+            liveAnalyzeInFlight = true;
+            lastLiveAnalyzeAt = now;
+
+            try {
+              const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+              if (blob) {
+                const frameFile = new File([blob], 'live-camera-frame.jpg', { type: 'image/jpeg' });
+                const result = await sendToBackend('/api/analyze-image', frameFile);
+                const actionResult = buildApiActionResult(result);
+                const detections = result.detections || [];
+                const rendered = renderDetectionBoxes(
+                  detections,
+                  { width: result.image_width, height: result.image_height },
+                  actionResult
+                );
+                if (!rendered) {
+                  // Keep previous YOLO labels if any, otherwise use fallback box.
+                  if (!(lastLiveDetectionSnapshot && lastLiveDetectionSnapshot.detections && lastLiveDetectionSnapshot.detections.length)) {
+                    const fallbackBox = findFocusBoxFromImageData(imageData);
+                    if (fallbackBox) {
+                      renderCameraBox(fallbackBox, actionResult);
+                    } else {
+                      renderCameraBox(buildCenterFallbackBox(), actionResult);
+                    }
+                  }
+                } else {
+                  lastLiveYoloDetectionsAt = performance.now();
+                  lastLiveDetectionSnapshot = {
+                    detections,
+                    imageSize: { width: result.image_width, height: result.image_height },
+                    actionResult
+                  };
+                  setDetectedObjectsAction(detections, actionResult);
+                }
+                setStatus('Live camera YOLO labeling active.');
+              }
+            } catch (error) {
+              setStatus('Live camera labeling error: ' + (error && error.message ? error.message : 'backend request failed'));
+            } finally {
+              liveAnalyzeInFlight = false;
+            }
+          }
+        }
+
+        requestAnimationFrame(tick);
+      };
+
+      requestAnimationFrame(tick);
+    }
+
+    function setFlags(items) {
+      if (!items.length) {
+        flagsEl.innerHTML = '<li>No strong suspicious cues found.</li>';
+        return;
+      }
+      flagsEl.innerHTML = items.map(item => '<li>' + item + '</li>').join('');
+    }
+
+    function setTimeline(items) {
+      if (!items.length) {
+        timelineEl.innerHTML = '<li>No notable events detected in sampled frames.</li>';
+        return;
+      }
+      timelineEl.innerHTML = items
+        .map(item => '<li><strong>' + item.time + '</strong> ' + item.note + '</li>')
+        .join('');
+    }
+
+    function buildApiActionResult(result) {
+      if (!result || !result.result) {
+        return null;
+      }
+
+      const activity = result.result.activity || 'routine_activity';
+      const confidence = Number(result.result.confidence || 0);
+      const riskScore = actionProfiles[activity] ? actionProfiles[activity].riskScore : 50;
+      return {
+        action: activity,
+        confidence,
+        riskScore,
+        reason: 'YOLO backend classified the uploaded media.'
+      };
+    }
+
+    function detectionsToFlags(detections) {
+      if (!Array.isArray(detections) || !detections.length) {
+        return ['No detectable objects were returned by the YOLO model.'];
+      }
+
+      return detections.slice(0, 8).map(item => {
+        const label = (item.class_name || item.display_name || 'object').replace(/_/g, ' ');
+        const confidence = Math.round((item.confidence || 0) * 100);
+        return 'Detected ' + label + ' at ' + confidence + '% confidence.';
+      });
+    }
+
+    function setDetectedObjectsAction(detections, fallbackActionResult) {
+      if (!Array.isArray(detections) || detections.length === 0) {
+        setAction(fallbackActionResult || null);
+        return;
+      }
+
+      const counts = {};
+      detections.forEach(item => {
+        const key = String(item.class_name || item.display_name || 'object').toLowerCase();
+        counts[key] = (counts[key] || 0) + 1;
+      });
+
+      const summary = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, count]) => name.replace(/_/g, ' ') + ' x' + count)
+        .join(' • ');
+
+      actionChip.textContent = 'Detected Objects: ' + summary;
+    }
+
+    function videoResultToTimeline(result) {
+      if (!result || !result.metrics) {
+        return [];
+      }
+
+      return [
+        {
+          time: '00:00',
+          note: 'YOLO backend processed ' + Math.round(result.metrics.frames || 0) + ' frames.'
+        },
+        {
+          time: '00:01',
+          note: 'Average people detected: ' + (result.metrics.avg_people || 0).toFixed(2) + '.'
+        }
+      ];
+    }
+
+    async function sendToBackend(endpoint, file) {
+      const formData = new FormData();
+      formData.append('file', file, file.name || 'media');
+
+      const response = await fetch(apiBase + endpoint, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        let message = await response.text();
+        try {
+          const parsed = JSON.parse(message);
+          message = parsed.error || message;
+        } catch (error) {
+          // Keep raw text for non-JSON backend errors.
+        }
+        throw new Error(message || 'Backend request failed');
+      }
+
+      return response.json();
+    }
+
+    function classifyAction(metrics, motionShift) {
+      const shift = motionShift || 0;
+      const darkness = metrics.avgBrightness < 70;
+      const heavyRed = metrics.redRatio > 0.09;
+      const highContrast = metrics.contrast > 58;
+
+      if (heavyRed && highContrast && shift > 10) {
+        return {
+          action: 'aggressive_confrontation',
+          confidence: 0.86,
+          riskScore: actionProfiles.aggressive_confrontation.riskScore,
+          reason: 'Strong red dominance with abrupt intensity shifts indicates possible confrontation.'
+        };
+      }
+
+      if (shift > 22 || (shift > 16 && metrics.contrast > 54)) {
+        return {
+          action: 'group_tension',
+          confidence: 0.74,
+          riskScore: actionProfiles.group_tension.riskScore,
+          reason: 'Frequent motion-like frame shifts indicate heightened crowd activity.'
+        };
+      }
+
+      if (shift > 13 || metrics.contrast > 52) {
+        return {
+          action: 'rapid_running',
+          confidence: 0.7,
+          riskScore: actionProfiles.rapid_running.riskScore,
+          reason: 'Fast visual changes suggest running or evasive movement.'
+        };
+      }
+
+      if (darkness) {
+        return {
+          action: 'low_visibility_unclear',
+          confidence: 0.65,
+          riskScore: actionProfiles.low_visibility_unclear.riskScore,
+          reason: 'Low-light conditions reduce certainty and increase ambiguity risk.'
+        };
+      }
+
+      if (metrics.redRatio > 0.05 || metrics.contrast > 45) {
+        return {
+          action: 'suspicious_loitering',
+          confidence: 0.62,
+          riskScore: actionProfiles.suspicious_loitering.riskScore,
+          reason: 'Moderate anomaly cues suggest prolonged suspicious presence.'
+        };
+      }
+
+      return {
+        action: 'routine_activity',
+        confidence: 0.78,
+        riskScore: actionProfiles.routine_activity.riskScore,
+        reason: 'Scene signature aligns with normal activity patterns.'
+      };
+    }
+
+    function stopCamera() {
+      currentBoxUpdateToken += 1;
+      liveAnalyzeInFlight = false;
+      lastLiveAnalyzeAt = 0;
+      lastLiveYoloDetectionsAt = 0;
+      lastLiveDetectionSnapshot = null;
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+        activeStream = null;
+      }
+      clearCameraOverlay();
+      captureBtn.disabled = true;
+      stopCameraBtn.disabled = true;
+      openCameraBtn.disabled = false;
+    }
+
+    async function openCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setStatus('Camera API is not supported in this browser.');
+        return;
+      }
+
+      stopCamera();
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        });
+
+        activeStream = stream;
+        currentType = 'camera/live';
+        if (currentUrl) {
+          URL.revokeObjectURL(currentUrl);
+          currentUrl = '';
+        }
+
+        preview.innerHTML = '';
+        const liveVideo = document.createElement('video');
+        liveVideo.autoplay = true;
+        liveVideo.muted = true;
+        liveVideo.playsInline = true;
+        liveVideo.srcObject = stream;
+        preview.appendChild(liveVideo);
+
+        currentBoxUpdateToken += 1;
+        updateLiveCameraBox(liveVideo, currentBoxUpdateToken);
+
+        captureBtn.disabled = false;
+        stopCameraBtn.disabled = false;
+        openCameraBtn.disabled = true;
+        analyzeBtn.disabled = false;
+        setStatus('Camera opened. Capture a frame or analyze live feed.');
+      } catch (error) {
+        setStatus('Unable to access camera. Check permissions and try again.');
+        console.error(error);
+      }
+    }
+
+    async function captureFrameFromCamera() {
+      const liveVideo = preview.querySelector('video');
+      if (!liveVideo || !activeStream) {
+        setStatus('Open the camera before capturing.');
+        return;
+      }
+
+      const width = liveVideo.videoWidth || 640;
+      const height = liveVideo.videoHeight || 360;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(liveVideo, 0, 0, width, height);
+
+      const img = document.createElement('img');
+      img.src = canvas.toDataURL('image/png');
+      img.alt = 'Camera capture';
+      preview.innerHTML = '';
+      preview.appendChild(img);
+
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) {
+        setStatus('Failed to capture camera frame.');
+        return;
+      }
+      currentFile = new File([blob], 'camera-capture.png', { type: 'image/png' });
+
+      currentType = 'image/camera-capture';
+      analyzeBtn.disabled = false;
+
+      try {
+        await analyzeImageFromBackend(currentFile);
+      } catch (error) {
+        setStatus('Frame captured but YOLO labeling failed: ' + (error && error.message ? error.message : 'unknown error'));
+        return;
+      }
+
+      setStatus('Frame captured and labeled by YOLO.');
+    }
+
+    async function imageFromVideoFrame(videoEl) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoEl.videoWidth || 640;
+      canvas.height = videoEl.videoHeight || 360;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      const img = new Image();
+      img.src = canvas.toDataURL('image/png');
+      await new Promise(resolve => {
+        if (img.complete) {
+          resolve();
+          return;
+        }
+        img.addEventListener('load', resolve, { once: true });
+      });
+      return img;
+    }
+
+    function clearPreview() {
+      stopCamera();
+      currentBoxUpdateToken += 1;
+      clearCameraOverlay();
+      preview.innerHTML = '<div class="preview-note">No media loaded yet.</div>';
+      updateRiskUI(0, 'LOW RISK');
+      verdict.textContent = 'Upload media and run analysis to generate a result.';
+      setAction(null);
+      setFlags([]);
+      setTimeline([]);
+      analyzeBtn.disabled = true;
+      setStatus('');
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
+        currentUrl = '';
+      }
+      currentFile = null;
+      currentType = '';
+    }
+
+    function showMedia(file) {
+      stopCamera();
+      currentBoxUpdateToken += 1;
+      clearCameraOverlay();
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      currentUrl = URL.createObjectURL(file);
+      currentFile = file;
+      currentType = file.type;
+
+      preview.innerHTML = '';
+
+      if (file.type.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.src = currentUrl;
+        img.alt = 'Uploaded image';
+        preview.appendChild(img);
+      } else if (file.type.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.src = currentUrl;
+        video.controls = true;
+        video.muted = true;
+        preview.appendChild(video);
+      } else {
+        preview.innerHTML = '<div class="preview-note">Unsupported file type.</div>';
+        analyzeBtn.disabled = true;
+        return;
+      }
+
+      analyzeBtn.disabled = false;
+      setStatus('Media loaded. Click Analyze Media to start.');
+    }
+
+    function computeFrameMetrics(imageData) {
+      const data = imageData.data;
+      let bright = 0;
+      let redDominant = 0;
+      let contrastSum = 0;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        bright += lum;
+
+        if (r > g * 1.28 && r > b * 1.28 && r > 85) {
+          redDominant += 1;
+        }
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        contrastSum += max - min;
+      }
+
+      const pixels = data.length / 4;
+      return {
+        avgBrightness: bright / pixels,
+        redRatio: redDominant / pixels,
+        contrast: contrastSum / pixels
+      };
+    }
+
+    async function analyzeImageFromBackend(file) {
+      setStatus('Sending image to YOLO backend...');
+      const result = await sendToBackend('/api/analyze-image', file);
+      const actionResult = buildApiActionResult(result);
+      const detections = result.detections || [];
+      const interactions = Array.isArray(result.interactions) ? result.interactions : [];
+      const score = Math.max(8, Math.min(97, (actionResult ? actionResult.riskScore : 20) * 0.9 + (actionResult ? actionResult.confidence * 10 : 0)));
+      const objectSummary = result.object_summary || {};
+      const interactionFlags = interactions.map(name => 'Interaction: ' + String(name).replace(/_/g, ' ') + '.');
+      const summaryFlags = Object.entries(objectSummary)
+        .slice(0, 6)
+        .map(([name, count]) => {
+          const safeCount = Number(count || 0);
+          return 'Object summary: ' + name.replace(/_/g, ' ') + ' x' + safeCount + '.';
+        });
+      applyResult(score, detectionsToFlags(detections).concat(interactionFlags, summaryFlags), [], 'YOLO image analysis completed.', actionResult);
+
+      const rendered = renderDetectionBoxes(detections, { width: result.image_width, height: result.image_height }, actionResult);
+      if (!rendered) {
+        const fallbackBox = findFocusBoxFromImageData(await captureImageDataFromPreview());
+        if (fallbackBox) {
+          renderCameraBox(fallbackBox, actionResult);
+        }
+      }
+      setDetectedObjectsAction(detections, actionResult);
+    }
+
+    async function captureImageDataFromPreview() {
+      const media = preview.querySelector('img, video');
+      if (!media || media.tagName.toLowerCase() !== 'img') {
+        throw new Error('No image available for fallback box rendering.');
+      }
+
+      if (!media.complete) {
+        await new Promise(resolve => media.addEventListener('load', resolve, { once: true }));
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = media.naturalWidth || 640;
+      canvas.height = media.naturalHeight || 360;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(media, 0, 0, canvas.width, canvas.height);
+      return ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
+
+    async function analyzeVideoFromBackend(file) {
+      setStatus('Sending video to YOLO backend...');
+      const result = await sendToBackend('/api/analyze-video', file);
+      const actionResult = buildApiActionResult(result);
+      const metrics = result.metrics || {};
+      const interactions = Array.isArray(result.interactions) ? result.interactions : [];
+      const score = Math.max(8, Math.min(97, (actionResult ? actionResult.riskScore : 20) * 0.9 + (metrics.motion_score || 0) * 500));
+      const objectSummary = result.object_summary || {};
+      const flags = [
+        'YOLO backend processed ' + Math.round(metrics.frames || 0) + ' frames.',
+        'Average people detected: ' + (metrics.avg_people || 0).toFixed(2) + '.',
+        'Maximum people in one frame: ' + Math.round(result.max_people_in_frame || 0) + '.',
+        'Weapon frame ratio: ' + (metrics.weapon_frame_ratio || 0).toFixed(3) + '.',
+        'Loitering ratio: ' + (metrics.loitering_ratio || 0).toFixed(3) + '.'
+      ];
+      interactions.forEach(name => {
+        flags.push('Interaction: ' + String(name).replace(/_/g, ' ') + '.');
+      });
+      Object.entries(objectSummary).slice(0, 6).forEach(([name, count]) => {
+        flags.push('Object summary: ' + name.replace(/_/g, ' ') + ' x' + Number(count || 0) + '.');
+      });
+      applyResult(score, flags, videoResultToTimeline(result), 'YOLO video analysis completed.', actionResult);
+
+      const previewDetections = result.preview_detections || [];
+      const rendered = renderDetectionBoxes(previewDetections, { width: result.image_width, height: result.image_height }, actionResult);
+      if (!rendered) {
+        clearCameraOverlay();
+      }
+      setDetectedObjectsAction(previewDetections, actionResult);
+    }
+
+    function formatTime(seconds) {
+      const mm = Math.floor(seconds / 60);
+      const ss = Math.floor(seconds % 60);
+      return String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+    }
+
+    function applyResult(score, flags, timeline, statusMessage, actionResult) {
+      let label = 'LOW RISK';
+      if (score >= 70) label = 'HIGH RISK';
+      else if (score >= 40) label = 'MEDIUM RISK';
+
+      updateRiskUI(score, label);
+      setAction(actionResult || null);
+      setFlags(flags);
+      setTimeline(timeline);
+
+      const verdictText =
+        label === 'HIGH RISK'
+          ? 'Potentially high-risk visual pattern detected. Escalate for immediate manual review.'
+          : label === 'MEDIUM RISK'
+            ? 'Moderate risk indicators detected. Review the media and timeline events carefully.'
+            : 'Low-risk output from automatic scan. Continue with normal verification process.';
+
+      verdict.textContent = verdictText;
+      setStatus(statusMessage);
+    }
+
+    analyzeBtn.addEventListener('click', async () => {
+      const media = preview.querySelector('img, video');
+      if (!media) {
+        setStatus('Please load media first.');
+        return;
+      }
+
+      analyzeBtn.disabled = true;
+      setStatus('Running analysis...');
+
+      try {
+        if (currentType.startsWith('image/')) {
+          if (!currentFile) {
+            throw new Error('No uploaded image file found.');
+          }
+          await analyzeImageFromBackend(currentFile);
+        } else if (currentType === 'camera/live') {
+          const cameraFrame = await imageFromVideoFrame(media);
+          const canvas = document.createElement('canvas');
+          canvas.width = cameraFrame.naturalWidth || 640;
+          canvas.height = cameraFrame.naturalHeight || 360;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(cameraFrame, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+          if (!blob) {
+            throw new Error('Unable to capture live camera frame.');
+          }
+          const file = new File([blob], 'live-camera-frame.png', { type: 'image/png' });
+          await analyzeImageFromBackend(file);
+          setStatus('Live camera frame analyzed by YOLO backend.');
+        } else if (currentType.startsWith('video/')) {
+          if (!currentFile) {
+            throw new Error('Video file missing');
+          }
+          await analyzeVideoFromBackend(currentFile);
+        }
+      } catch (error) {
+        setStatus('Analysis failed: ' + (error && error.message ? error.message : 'Try a different file.'));
+        console.error(error);
+      } finally {
+        analyzeBtn.disabled = false;
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      mediaInput.value = '';
+      clearPreview();
+    });
+
+    openCameraBtn.addEventListener('click', openCamera);
+    stopCameraBtn.addEventListener('click', () => {
+      stopCamera();
+      setStatus('Camera stopped.');
+      if (!currentType.startsWith('image/') && !currentType.startsWith('video/')) {
+        analyzeBtn.disabled = true;
+      }
+    });
+    captureBtn.addEventListener('click', captureFrameFromCamera);
+
+    mediaInput.addEventListener('change', event => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      showMedia(file);
+    });
+
+    ['dragenter', 'dragover'].forEach(type => {
+      dropzone.addEventListener(type, event => {
+        event.preventDefault();
+        dropzone.classList.add('drag');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(type => {
+      dropzone.addEventListener(type, event => {
+        event.preventDefault();
+        dropzone.classList.remove('drag');
+      });
+    });
+
+    dropzone.addEventListener('drop', event => {
+      const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+      if (!file) return;
+      mediaInput.files = event.dataTransfer.files;
+      showMedia(file);
+    });
+
+    clearPreview();
+  </script>
+</body>
+</html>
