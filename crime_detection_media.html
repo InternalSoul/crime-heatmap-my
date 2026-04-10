@@ -208,6 +208,33 @@
       font-weight: 700;
     }
 
+    .action-chip.objects {
+      background: #edf6ff;
+      border-color: #cde2f6;
+      color: #1a4268;
+    }
+
+    .view-switch {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .view-switch button {
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .view-switch button.active {
+      background: linear-gradient(135deg, #145ea8, #0f766e);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 6px 14px rgba(20, 94, 168, 0.2);
+    }
+
     button {
       border: 1px solid #cde0f3;
       border-radius: 12px;
@@ -280,7 +307,7 @@
       box-shadow:
         0 0 0 1px rgba(0, 0, 0, 0.12),
         0 0 0 9999px rgba(0, 0, 0, 0.06);
-      transition: all 0.18s ease;
+      transition: none;
     }
 
     .camera-box.high { border-color: #dc2626; }
@@ -512,7 +539,11 @@
         </article>
 
         <article>
-          <h3 style="margin: 0 0 8px;">Classified Action</h3>
+          <h3 style="margin: 0 0 8px;">Insight View</h3>
+          <div class="view-switch">
+            <button id="showActionBtn" class="active" type="button">Show Action</button>
+            <button id="showObjectsBtn" type="button">Show Objects</button>
+          </div>
           <div id="actionChip" class="action-chip">No action classified yet.</div>
         </article>
 
@@ -551,6 +582,8 @@
     const timelineEl = document.getElementById('timeline');
     const riskTag = document.getElementById('riskTag');
     const actionChip = document.getElementById('actionChip');
+    const showActionBtn = document.getElementById('showActionBtn');
+    const showObjectsBtn = document.getElementById('showObjectsBtn');
 
     let currentUrl = '';
     let currentFile = null;
@@ -562,16 +595,32 @@
     let liveAnalyzeInFlight = false;
     let lastLiveAnalyzeAt = 0;
     let lastLiveYoloDetectionsAt = 0;
+    let lastLiveOfflineStatusAt = 0;
     let lastLiveDetectionSnapshot = null;
+    let liveVideoAnalyzeInFlight = false;
+    let lastLiveVideoAnalyzeAt = 0;
+    let lastLiveVideoOfflineStatusAt = 0;
+    let videoBatchAnalyzeInFlight = false;
+    let lastRealtimeDisplayDetections = [];
+    let lastRealtimeDetectionAtMs = 0;
+    let lastRealtimeActionResult = null;
+    let backendUnavailable = false;
+    let insightViewMode = 'action';
+    let lastActionResult = null;
+    let lastDetections = [];
     const liveAnalyzeIntervalMs = 700;
+    const liveBackendRetryIntervalMs = 5000;
+    const liveVideoAnalyzeIntervalMs = 260;
+    const liveVideoBackendRetryIntervalMs = 2200;
 
     const actionProfiles = {
-      routine_activity: { label: 'Routine Activity', riskScore: 18 },
-      suspicious_loitering: { label: 'Suspicious Loitering', riskScore: 44 },
-      rapid_running: { label: 'Rapid Running', riskScore: 56 },
-      group_tension: { label: 'Group Tension Pattern', riskScore: 66 },
-      aggressive_confrontation: { label: 'Aggressive Confrontation', riskScore: 88 },
-      low_visibility_unclear: { label: 'Low Visibility / Unclear Action', riskScore: 52 }
+      no_clear_activity: { label: 'No Clear Activity', riskScore: 6 },
+      routine_activity: { label: 'Routine Activity', riskScore: 15 },
+      suspicious_loitering: { label: 'Suspicious Loitering', riskScore: 42 },
+      rapid_running: { label: 'Rapid Running', riskScore: 58 },
+      group_tension: { label: 'Group Tension Pattern', riskScore: 72 },
+      aggressive_confrontation: { label: 'Aggressive Confrontation', riskScore: 90 },
+      low_visibility_unclear: { label: 'Low Visibility / Unclear Action', riskScore: 32 }
     };
 
     const apiBase = 'http://127.0.0.1:5001';
@@ -581,15 +630,131 @@
       return profile ? profile.label : key.replace(/_/g, ' ');
     }
 
-    function setAction(actionResult) {
+    function formatActionSummary(actionResult) {
       if (!actionResult) {
-        actionChip.textContent = 'No action classified yet.';
-        return;
+        return 'No action classified yet.';
       }
       const confidence = Math.round(actionResult.confidence * 100);
-      actionChip.textContent =
+      return (
         formatActionName(actionResult.action) +
-        ' • Confidence ' + confidence + '% • Action Risk ' + Math.round(actionResult.riskScore) + '%';
+        ' • Confidence ' + confidence + '% • Action Risk ' + Math.round(actionResult.riskScore) + '%'
+      );
+    }
+
+    function normalizeObjectLabel(rawLabel) {
+      const base = String(rawLabel || 'object')
+        .toLowerCase()
+        .trim()
+        .replace(/[\s-]+/g, '_')
+        .replace(/_\d+$/, '');
+
+      if (base === 'handbag' || base === 'backpack' || base === 'suitcase' || base === 'bag') {
+        return 'bag';
+      }
+      if (base === 'person') {
+        return 'person';
+      }
+      if (base === 'baseball_bat') {
+        return 'baseball bat';
+      }
+      return base.replace(/_/g, ' ');
+    }
+
+    function getIoU(boxA, boxB) {
+      if (!Array.isArray(boxA) || !Array.isArray(boxB) || boxA.length < 4 || boxB.length < 4) {
+        return 0;
+      }
+
+      const [ax1, ay1, ax2, ay2] = boxA;
+      const [bx1, by1, bx2, by2] = boxB;
+      const interX1 = Math.max(ax1, bx1);
+      const interY1 = Math.max(ay1, by1);
+      const interX2 = Math.min(ax2, bx2);
+      const interY2 = Math.min(ay2, by2);
+      const interW = Math.max(0, interX2 - interX1);
+      const interH = Math.max(0, interY2 - interY1);
+      const interArea = interW * interH;
+      if (!interArea) {
+        return 0;
+      }
+
+      const areaA = Math.max(0, ax2 - ax1) * Math.max(0, ay2 - ay1);
+      const areaB = Math.max(0, bx2 - bx1) * Math.max(0, by2 - by1);
+      const union = Math.max(1e-6, areaA + areaB - interArea);
+      return interArea / union;
+    }
+
+    function dedupeDetectionsForSummary(detections) {
+      if (!Array.isArray(detections) || !detections.length) {
+        return [];
+      }
+
+      const sorted = detections
+        .filter(item => item)
+        .slice()
+        .sort((a, b) => (Number(b.confidence || 0) - Number(a.confidence || 0)));
+
+      const kept = [];
+      for (const detection of sorted) {
+        const label = normalizeObjectLabel(detection.class_name || detection.display_name || 'object');
+        const shouldSkip = kept.some(existing => {
+          const existingLabel = normalizeObjectLabel(existing.class_name || existing.display_name || 'object');
+          if (existingLabel !== label) {
+            return false;
+          }
+          return getIoU(existing.box, detection.box) > 0.45;
+        });
+
+        if (!shouldSkip) {
+          kept.push(detection);
+        }
+      }
+
+      return kept;
+    }
+
+    function formatObjectsSummary(detections) {
+      if (!Array.isArray(detections) || detections.length === 0) {
+        return 'No objects detected yet.';
+      }
+
+      const compactDetections = dedupeDetectionsForSummary(detections);
+      const counts = {};
+      compactDetections.forEach(item => {
+        const key = normalizeObjectLabel(item.class_name || item.display_name || 'object');
+        counts[key] = (counts[key] || 0) + 1;
+      });
+
+      const summary = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, count]) => name + ' x' + count)
+        .join(' • ');
+
+      return 'Detected Objects: ' + summary;
+    }
+
+    function renderInsightChip() {
+      if (insightViewMode === 'objects') {
+        actionChip.classList.add('objects');
+        actionChip.textContent = formatObjectsSummary(lastDetections);
+        return;
+      }
+
+      actionChip.classList.remove('objects');
+      actionChip.textContent = formatActionSummary(lastActionResult);
+    }
+
+    function setInsightMode(mode) {
+      insightViewMode = mode === 'objects' ? 'objects' : 'action';
+      showActionBtn.classList.toggle('active', insightViewMode === 'action');
+      showObjectsBtn.classList.toggle('active', insightViewMode === 'objects');
+      renderInsightChip();
+    }
+
+    function setAction(actionResult) {
+      lastActionResult = actionResult || null;
+      renderInsightChip();
     }
 
     function updateRiskUI(score, label) {
@@ -610,6 +775,22 @@
 
     function setStatus(text) {
       statusLine.textContent = text || '';
+    }
+
+    function markBackendUnavailable() {
+      backendUnavailable = true;
+    }
+
+    function clearBackendUnavailable() {
+      backendUnavailable = false;
+    }
+
+    function isNetworkFetchError(error) {
+      if (!error || !error.message) {
+        return false;
+      }
+      const message = String(error.message).toLowerCase();
+      return message.includes('failed to fetch') || message.includes('networkerror') || message.includes('network request failed');
     }
 
     function ensureCameraOverlay() {
@@ -669,11 +850,180 @@
       overlay.appendChild(boxEl);
     }
 
+    function normalizeDetectionClassName(rawName) {
+      return String(rawName || '')
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '_');
+    }
+
+    function isBagClassName(className) {
+      const key = normalizeDetectionClassName(className).replace(/_\d+$/, '');
+      return key === 'bag' || key === 'handbag' || key === 'backpack' || key === 'suitcase';
+    }
+
+    function minConfidenceForClass(className) {
+      const key = normalizeDetectionClassName(className);
+      const perClass = {
+        person: 0.42,
+        backpack: 0.05,
+        handbag: 0.05,
+        suitcase: 0.05,
+        knife: 0.06,
+        scissors: 0.06,
+        baseball_bat: 0.07
+      };
+      return perClass[key] || 0.12;
+    }
+
+    function minAreaRatioForClass(className) {
+      const key = normalizeDetectionClassName(className).replace(/_\d+$/, '');
+      const perClass = {
+        person: 0.003,
+        backpack: 0.0006,
+        handbag: 0.0006,
+        suitcase: 0.0009,
+        bag: 0.0006,
+        knife: 0.0002,
+        scissors: 0.0002,
+        baseball_bat: 0.00035
+      };
+      return perClass[key] || 0.0009;
+    }
+
+    function filterDetectionsForDisplay(detections, imageSize) {
+      if (!Array.isArray(detections) || !detections.length) {
+        return [];
+      }
+
+      const width = imageSize && imageSize.width ? imageSize.width : 1;
+      const height = imageSize && imageSize.height ? imageSize.height : 1;
+
+      const primary = detections.filter(detection => {
+        if (!Array.isArray(detection.box) || detection.box.length < 4) {
+          return false;
+        }
+
+        const confidence = Number(detection.confidence || 0);
+        const className = detection.class_name || detection.display_name || '';
+        if (confidence < minConfidenceForClass(className)) {
+          return false;
+        }
+
+        const [x1, y1, x2, y2] = detection.box;
+        const boxW = Math.max(1, x2 - x1);
+        const boxH = Math.max(1, y2 - y1);
+        const areaRatio = (boxW * boxH) / Math.max(1, width * height);
+
+        if (areaRatio < minAreaRatioForClass(className)) {
+          return false;
+        }
+
+        const normalizedClass = normalizeDetectionClassName(className).replace(/_\d+$/, '');
+        if (normalizedClass === 'person') {
+          const aspectRatio = boxH / boxW;
+          if (aspectRatio < 1.05 || aspectRatio > 4.6) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      const hasBagInPrimary = primary.some(item => isBagClassName(item.class_name || item.display_name || ''));
+      if (hasBagInPrimary) {
+        return primary;
+      }
+
+      const relaxedBag = detections
+        .filter(detection => {
+          if (!Array.isArray(detection.box) || detection.box.length < 4) {
+            return false;
+          }
+
+          if (!isBagClassName(detection.class_name || detection.display_name || '')) {
+            return false;
+          }
+
+          const confidence = Number(detection.confidence || 0);
+          if (confidence < 0.06) {
+            return false;
+          }
+
+          const [x1, y1, x2, y2] = detection.box;
+          const boxW = Math.max(1, x2 - x1);
+          const boxH = Math.max(1, y2 - y1);
+          const areaRatio = (boxW * boxH) / Math.max(1, width * height);
+          return areaRatio >= 0.0012;
+        })
+        .sort((a, b) => Number(b.confidence || 0) - Number(a.confidence || 0));
+
+      if (relaxedBag.length) {
+        return primary.concat(relaxedBag[0]);
+      }
+
+      return primary;
+    }
+
+    function boxCenter(box) {
+      if (!Array.isArray(box) || box.length < 4) {
+        return { x: 0, y: 0 };
+      }
+      return { x: (box[0] + box[2]) * 0.5, y: (box[1] + box[3]) * 0.5 };
+    }
+
+    function attachMotionToDetections(currentDetections, previousDetections, deltaMs) {
+      const dt = Math.max(0.001, Number(deltaMs || 0) / 1000);
+      const prev = Array.isArray(previousDetections) ? previousDetections : [];
+      const usedPrev = new Set();
+
+      return currentDetections.map(detection => {
+        const label = normalizeDetectionClassName(detection.class_name || detection.display_name || 'object');
+        const center = boxCenter(detection.box);
+        let bestIndex = -1;
+        let bestDistance = Number.POSITIVE_INFINITY;
+
+        for (let i = 0; i < prev.length; i += 1) {
+          if (usedPrev.has(i)) {
+            continue;
+          }
+          const prevLabel = normalizeDetectionClassName(prev[i].class_name || prev[i].display_name || 'object');
+          if (prevLabel !== label) {
+            continue;
+          }
+          const prevCenter = boxCenter(prev[i].box);
+          const dx = center.x - prevCenter.x;
+          const dy = center.y - prevCenter.y;
+          const distance = Math.hypot(dx, dy);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestIndex = i;
+          }
+        }
+
+        let vx = 0;
+        let vy = 0;
+        if (bestIndex >= 0 && bestDistance < 180) {
+          usedPrev.add(bestIndex);
+          const prevCenter = boxCenter(prev[bestIndex].box);
+          vx = (center.x - prevCenter.x) / dt;
+          vy = (center.y - prevCenter.y) / dt;
+        }
+
+        return {
+          ...detection,
+          _vx: vx,
+          _vy: vy
+        };
+      });
+    }
+
     function renderDetectionBoxes(detections, imageSize, actionResult) {
       const overlay = ensureCameraOverlay();
       overlay.innerHTML = '';
 
-      if (!Array.isArray(detections) || !detections.length) {
+      const filteredDetections = filterDetectionsForDisplay(detections, imageSize);
+      if (!filteredDetections.length) {
         return false;
       }
 
@@ -681,7 +1031,7 @@
       const height = imageSize && imageSize.height ? imageSize.height : 1;
       const riskClass = actionResult && actionResult.riskScore >= 70 ? 'high' : actionResult && actionResult.riskScore >= 40 ? 'medium' : 'low';
 
-      detections.forEach(detection => {
+      filteredDetections.forEach(detection => {
         if (!Array.isArray(detection.box) || detection.box.length < 4) {
           return;
         }
@@ -702,10 +1052,10 @@
         const label = document.createElement('div');
         const category = getDetectionCategory(detection.class_name || detection.display_name || '');
         boxEl.className = 'camera-box ' + category + ' ' + riskClass;
-        const name = (detection.class_name || detection.display_name || 'object').replace(/_/g, ' ');
+        const name = normalizeObjectLabel(detection.class_name || detection.display_name || 'object');
         const confidence = Math.round((detection.confidence || 0) * 100) + '%';
-        const risk = actionResult ? Math.round(actionResult.riskScore) + '%' : '0%';
-        label.innerHTML = '<span>' + name + '</span><span>' + confidence + ' • Risk ' + risk + '</span>';
+        const concern = category === 'weapon' ? ' • Concern Elevated' : '';
+        label.innerHTML = '<span>' + name + '</span><span>Confidence ' + confidence + concern + '</span>';
 
         boxEl.appendChild(label);
         label.className = 'camera-label ' + category;
@@ -890,7 +1240,8 @@
             }
           }
 
-          if (!liveAnalyzeInFlight && now - lastLiveAnalyzeAt >= liveAnalyzeIntervalMs) {
+          const activeInterval = backendUnavailable ? liveBackendRetryIntervalMs : liveAnalyzeIntervalMs;
+          if (!liveAnalyzeInFlight && now - lastLiveAnalyzeAt >= activeInterval) {
             liveAnalyzeInFlight = true;
             lastLiveAnalyzeAt = now;
 
@@ -898,7 +1249,7 @@
               const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
               if (blob) {
                 const frameFile = new File([blob], 'live-camera-frame.jpg', { type: 'image/jpeg' });
-                const result = await sendToBackend('/api/analyze-image', frameFile);
+                const result = await sendToBackend('/api/analyze-image', frameFile, { conf: 0.1 });
                 const actionResult = buildApiActionResult(result);
                 const detections = result.detections || [];
                 const rendered = renderDetectionBoxes(
@@ -928,7 +1279,21 @@
                 setStatus('Live camera YOLO labeling active.');
               }
             } catch (error) {
-              setStatus('Live camera labeling error: ' + (error && error.message ? error.message : 'backend request failed'));
+              const liveMetrics = computeFrameMetrics(imageData);
+              const liveMotionShift = liveMetrics.avgBrightness > 0 ? Math.min(24, Math.abs(liveMetrics.contrast - 42) * 0.35) : 0;
+              const liveActionResult = classifyBoxFromMetrics(liveMetrics, liveMotionShift);
+              const liveFallbackBox = findFocusBoxFromImageData(imageData) || buildCenterFallbackBox();
+              renderCameraBox(liveFallbackBox, liveActionResult);
+              setDetectedObjectsAction([], liveActionResult);
+
+              if (isNetworkFetchError(error)) {
+                if (now - lastLiveOfflineStatusAt > 3500) {
+                  setStatus('Live camera running in local fallback mode (backend offline).');
+                  lastLiveOfflineStatusAt = now;
+                }
+              } else {
+                setStatus('Live camera labeling error: ' + (error && error.message ? error.message : 'backend request failed'));
+              }
             } finally {
               liveAnalyzeInFlight = false;
             }
@@ -964,6 +1329,21 @@
         return null;
       }
 
+      const detections = Array.isArray(result.detections) ? result.detections : [];
+      const filteredDetections = filterDetectionsForDisplay(detections, {
+        width: result.image_width,
+        height: result.image_height
+      });
+
+      if (filteredDetections.length === 0) {
+        return {
+          action: 'no_clear_activity',
+          confidence: 0.5,
+          riskScore: actionProfiles.no_clear_activity.riskScore,
+          reason: 'No reliable objects were detected in this frame.'
+        };
+      }
+
       const activity = result.result.activity || 'routine_activity';
       const confidence = Number(result.result.confidence || 0);
       const riskScore = actionProfiles[activity] ? actionProfiles[activity].riskScore : 50;
@@ -976,36 +1356,24 @@
     }
 
     function detectionsToFlags(detections) {
-      if (!Array.isArray(detections) || !detections.length) {
+      const compactDetections = dedupeDetectionsForSummary(detections);
+      if (!compactDetections.length) {
         return ['No detectable objects were returned by the YOLO model.'];
       }
 
-      return detections.slice(0, 8).map(item => {
-        const label = (item.class_name || item.display_name || 'object').replace(/_/g, ' ');
+      return compactDetections.slice(0, 8).map(item => {
+        const label = normalizeObjectLabel(item.class_name || item.display_name || 'object');
         const confidence = Math.round((item.confidence || 0) * 100);
         return 'Detected ' + label + ' at ' + confidence + '% confidence.';
       });
     }
 
     function setDetectedObjectsAction(detections, fallbackActionResult) {
-      if (!Array.isArray(detections) || detections.length === 0) {
-        setAction(fallbackActionResult || null);
-        return;
+      if (fallbackActionResult) {
+        lastActionResult = fallbackActionResult;
       }
-
-      const counts = {};
-      detections.forEach(item => {
-        const key = String(item.class_name || item.display_name || 'object').toLowerCase();
-        counts[key] = (counts[key] || 0) + 1;
-      });
-
-      const summary = Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([name, count]) => name.replace(/_/g, ' ') + ' x' + count)
-        .join(' • ');
-
-      actionChip.textContent = 'Detected Objects: ' + summary;
+      lastDetections = Array.isArray(detections) ? detections : [];
+      renderInsightChip();
     }
 
     function videoResultToTimeline(result) {
@@ -1025,14 +1393,25 @@
       ];
     }
 
-    async function sendToBackend(endpoint, file) {
+    async function sendToBackend(endpoint, file, options) {
       const formData = new FormData();
       formData.append('file', file, file.name || 'media');
+      if (options && typeof options.conf === 'number') {
+        formData.append('conf', String(options.conf));
+      }
 
-      const response = await fetch(apiBase + endpoint, {
-        method: 'POST',
-        body: formData
-      });
+      let response;
+      try {
+        response = await fetch(apiBase + endpoint, {
+          method: 'POST',
+          body: formData
+        });
+      } catch (error) {
+        markBackendUnavailable();
+        throw new Error('Failed to fetch. Backend is unreachable at ' + apiBase + '. Start CrimeDetection app.py and try again.');
+      }
+
+      clearBackendUnavailable();
 
       if (!response.ok) {
         let message = await response.text();
@@ -1048,9 +1427,313 @@
       return response.json();
     }
 
+    async function createImageDataFromFile(file) {
+      const objectUrl = URL.createObjectURL(file);
+      try {
+        const img = new Image();
+        img.src = objectUrl;
+        await new Promise((resolve, reject) => {
+          if (img.complete) {
+            resolve();
+            return;
+          }
+          img.addEventListener('load', resolve, { once: true });
+          img.addEventListener('error', () => reject(new Error('Unable to read image for local analysis.')), { once: true });
+        });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || 640;
+        canvas.height = img.naturalHeight || 360;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        return {
+          imageData: ctx.getImageData(0, 0, canvas.width, canvas.height),
+          width: canvas.width,
+          height: canvas.height
+        };
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+
+    async function analyzeImageLocally(file, sourceLabel) {
+      const localImage = await createImageDataFromFile(file);
+      const metrics = computeFrameMetrics(localImage.imageData);
+      const localShift = Math.min(24, Math.abs(metrics.contrast - 42) * 0.35);
+      const actionResult = classifyAction(metrics, localShift);
+
+      const score = Math.max(
+        8,
+        Math.min(97, actionResult.riskScore * 0.9 + actionResult.confidence * 10)
+      );
+
+      const flags = [
+        'Fallback mode: backend offline, using local visual heuristics.',
+        'Average brightness: ' + metrics.avgBrightness.toFixed(1) + '.',
+        'Contrast level: ' + metrics.contrast.toFixed(1) + '.',
+        'Red intensity ratio: ' + (metrics.redRatio * 100).toFixed(2) + '%.',
+        'Object-level labels are unavailable in fallback mode.'
+      ];
+
+      applyResult(score, flags, [], 'Local ' + sourceLabel + ' analysis completed (backend offline).', actionResult);
+
+      const focusBox = findFocusBoxFromImageData(localImage.imageData) || buildCenterFallbackBox();
+      renderCameraBox(focusBox, actionResult);
+      setDetectedObjectsAction([], actionResult);
+    }
+
+    function riskLabelFromScore(score) {
+      if (score >= 70) {
+        return 'HIGH RISK';
+      }
+      if (score >= 40) {
+        return 'MEDIUM RISK';
+      }
+      return 'LOW RISK';
+    }
+
+    async function analyzeVideoFrameRealtime(videoEl, canvas, ctx) {
+      const now = performance.now();
+      canvas.width = videoEl.videoWidth || canvas.width || 640;
+      canvas.height = videoEl.videoHeight || canvas.height || 360;
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+      if (!blob) {
+        throw new Error('Could not capture video frame for live labeling.');
+      }
+
+      const frameFile = new File([blob], 'video-live-frame.jpg', { type: 'image/jpeg' });
+      const result = await sendToBackend('/api/analyze-image', frameFile, { conf: 0.08 });
+      const actionResult = buildApiActionResult(result);
+      const rawDetections = result.detections || [];
+      const filteredDetections = filterDetectionsForDisplay(rawDetections, { width: result.image_width, height: result.image_height });
+      const motionDetections = attachMotionToDetections(filteredDetections, lastRealtimeDisplayDetections, now - lastRealtimeDetectionAtMs);
+      lastRealtimeDisplayDetections = motionDetections;
+      lastRealtimeDetectionAtMs = now;
+      lastRealtimeActionResult = actionResult;
+
+      const rendered = renderDetectionBoxes(
+        motionDetections,
+        { width: result.image_width, height: result.image_height },
+        actionResult
+      );
+
+      if (!rendered) {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const fallbackBox = findFocusBoxFromImageData(imageData) || buildCenterFallbackBox();
+        renderCameraBox(fallbackBox, actionResult);
+      }
+
+      if (actionResult) {
+        const score = Math.max(8, Math.min(97, actionResult.riskScore * 0.9 + actionResult.confidence * 10));
+        updateRiskUI(score, riskLabelFromScore(score));
+        setAction(actionResult);
+      }
+
+      setDetectedObjectsAction(motionDetections, actionResult);
+      setStatus('Realtime video YOLO labeling active.');
+    }
+
+    function renderVideoRealtimeFallback(videoEl, canvas, ctx, now) {
+      canvas.width = videoEl.videoWidth || canvas.width || 640;
+      canvas.height = videoEl.videoHeight || canvas.height || 360;
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const metrics = computeFrameMetrics(imageData);
+      const motionShift = Math.min(24, Math.abs(metrics.contrast - 42) * 0.35);
+      const actionResult = classifyAction(metrics, motionShift);
+      const score = Math.max(8, Math.min(97, actionResult.riskScore * 0.9 + actionResult.confidence * 10));
+      updateRiskUI(score, riskLabelFromScore(score));
+      setAction(actionResult);
+      setDetectedObjectsAction([], actionResult);
+
+      const fallbackBox = findFocusBoxFromImageData(imageData) || buildCenterFallbackBox();
+      renderCameraBox(fallbackBox, actionResult);
+
+      if (now - lastLiveVideoOfflineStatusAt > 2600) {
+        setStatus('Realtime video fallback mode active (backend offline).');
+        lastLiveVideoOfflineStatusAt = now;
+      }
+    }
+
+    function startRealtimeVideoLabeling(videoEl, token) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      const tick = async () => {
+        if (token !== currentBoxUpdateToken || currentType.indexOf('video/') !== 0) {
+          return;
+        }
+
+        if (videoEl.paused || videoEl.ended || videoEl.readyState < 2) {
+          requestAnimationFrame(tick);
+          return;
+        }
+
+        const now = performance.now();
+
+        const interval = backendUnavailable ? liveVideoBackendRetryIntervalMs : liveVideoAnalyzeIntervalMs;
+
+        if (!liveVideoAnalyzeInFlight && now - lastLiveVideoAnalyzeAt >= interval) {
+          liveVideoAnalyzeInFlight = true;
+          lastLiveVideoAnalyzeAt = now;
+          try {
+            await analyzeVideoFrameRealtime(videoEl, canvas, ctx);
+          } catch (error) {
+            if (isNetworkFetchError(error)) {
+              renderVideoRealtimeFallback(videoEl, canvas, ctx, now);
+            } else {
+              setStatus('Realtime video labeling error: ' + (error && error.message ? error.message : 'unknown error'));
+            }
+          } finally {
+            liveVideoAnalyzeInFlight = false;
+          }
+        } else if (!liveVideoAnalyzeInFlight) {
+          clearCameraOverlay();
+        }
+
+        requestAnimationFrame(tick);
+      };
+
+      requestAnimationFrame(tick);
+    }
+
+    function seekVideoFrame(videoEl, targetTime) {
+      return new Promise((resolve, reject) => {
+        if (!Number.isFinite(targetTime) || targetTime < 0) {
+          resolve();
+          return;
+        }
+
+        const onSeeked = () => resolve();
+        const onError = () => reject(new Error('Unable to seek video frame for local analysis.'));
+
+        videoEl.addEventListener('seeked', onSeeked, { once: true });
+        videoEl.addEventListener('error', onError, { once: true });
+
+        try {
+          videoEl.currentTime = targetTime;
+        } catch (error) {
+          resolve();
+        }
+      });
+    }
+
+    async function loadVideoMetadata(videoEl) {
+      if (videoEl.readyState >= 1 && Number.isFinite(videoEl.duration)) {
+        return;
+      }
+
+      await new Promise((resolve, reject) => {
+        const onLoaded = () => resolve();
+        const onError = () => reject(new Error('Unable to read video metadata for local analysis.'));
+        videoEl.addEventListener('loadedmetadata', onLoaded, { once: true });
+        videoEl.addEventListener('error', onError, { once: true });
+      });
+    }
+
+    async function analyzeVideoLocally(file) {
+      setStatus('Backend offline. Running local video analysis...');
+
+      const objectUrl = URL.createObjectURL(file);
+      try {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        video.src = objectUrl;
+
+        await loadVideoMetadata(video);
+
+        const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 4;
+        const sampleCount = Math.max(5, Math.min(14, Math.round(duration * 2)));
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 360;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        let previousMetrics = null;
+        let peakActionResult = null;
+        let peakScore = 0;
+        let peakBox = null;
+        const timeline = [];
+        const scoreSamples = [];
+
+        for (let index = 0; index < sampleCount; index += 1) {
+          const ratio = sampleCount === 1 ? 0 : index / (sampleCount - 1);
+          const seekTime = Math.min(Math.max(0, duration - 0.05), ratio * duration);
+          await seekVideoFrame(video, seekTime);
+
+          if (video.readyState < 2) {
+            continue;
+          }
+
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const frameData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const metrics = computeFrameMetrics(frameData);
+          const motionShift = previousMetrics
+            ? Math.min(
+              24,
+              Math.abs(metrics.contrast - previousMetrics.contrast) +
+              Math.abs(metrics.avgBrightness - previousMetrics.avgBrightness) * 0.12
+            )
+            : Math.min(24, Math.abs(metrics.contrast - 42) * 0.35);
+
+          const frameAction = classifyAction(metrics, motionShift);
+          const frameScore = Math.max(8, Math.min(97, frameAction.riskScore * 0.86 + frameAction.confidence * 11));
+          scoreSamples.push(frameScore);
+
+          if (!peakActionResult || frameScore >= peakScore) {
+            peakScore = frameScore;
+            peakActionResult = frameAction;
+            peakBox = findFocusBoxFromImageData(frameData);
+          }
+
+          if (frameScore >= 58) {
+            timeline.push({
+              time: formatTime(seekTime),
+              note: formatActionName(frameAction.action) + ' cue detected in local fallback scan.'
+            });
+          }
+
+          previousMetrics = metrics;
+        }
+
+        const averageScore = scoreSamples.length
+          ? scoreSamples.reduce((sum, value) => sum + value, 0) / scoreSamples.length
+          : 14;
+
+        const finalAction = peakActionResult || {
+          action: 'routine_activity',
+          confidence: 0.55,
+          riskScore: actionProfiles.routine_activity.riskScore,
+          reason: 'Fallback mode could not sample enough video frames.'
+        };
+
+        const finalScore = Math.max(8, Math.min(97, averageScore * 0.55 + peakScore * 0.45));
+        const flags = [
+          'Fallback mode: backend offline, using local frame sampling.',
+          'Frames sampled: ' + scoreSamples.length + '.',
+          'Peak inferred action: ' + formatActionName(finalAction.action) + '.',
+          'Object-level labels are unavailable in local video fallback.'
+        ];
+
+        applyResult(finalScore, flags, timeline, 'Local video analysis completed (backend offline).', finalAction);
+        renderCameraBox(peakBox || buildCenterFallbackBox(), finalAction);
+        setDetectedObjectsAction([], finalAction);
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+
     function classifyAction(metrics, motionShift) {
       const shift = motionShift || 0;
-      const darkness = metrics.avgBrightness < 70;
+      const visibilityIndex = metrics.avgBrightness + metrics.contrast * 0.38;
+      const veryDark = metrics.avgBrightness < 38;
+      const lowDetail = metrics.contrast < 34;
+      const darkness = visibilityIndex < 58 || (veryDark && lowDetail);
       const heavyRed = metrics.redRatio > 0.09;
       const highContrast = metrics.contrast > 58;
 
@@ -1081,12 +1764,12 @@
         };
       }
 
-      if (darkness) {
+      if (darkness && shift < 11 && !heavyRed) {
         return {
           action: 'low_visibility_unclear',
-          confidence: 0.65,
+          confidence: 0.58,
           riskScore: actionProfiles.low_visibility_unclear.riskScore,
-          reason: 'Low-light conditions reduce certainty and increase ambiguity risk.'
+          reason: 'Scene brightness and detail are both too low for reliable interpretation.'
         };
       }
 
@@ -1110,6 +1793,10 @@
     function stopCamera() {
       currentBoxUpdateToken += 1;
       liveAnalyzeInFlight = false;
+      liveVideoAnalyzeInFlight = false;
+      lastRealtimeDisplayDetections = [];
+      lastRealtimeDetectionAtMs = 0;
+      lastRealtimeActionResult = null;
       lastLiveAnalyzeAt = 0;
       lastLiveYoloDetectionsAt = 0;
       lastLiveDetectionSnapshot = null;
@@ -1230,9 +1917,14 @@
       stopCamera();
       currentBoxUpdateToken += 1;
       clearCameraOverlay();
+      lastRealtimeDisplayDetections = [];
+      lastRealtimeDetectionAtMs = 0;
+      lastRealtimeActionResult = null;
       preview.innerHTML = '<div class="preview-note">No media loaded yet.</div>';
       updateRiskUI(0, 'LOW RISK');
       verdict.textContent = 'Upload media and run analysis to generate a result.';
+      lastActionResult = null;
+      lastDetections = [];
       setAction(null);
       setFlags([]);
       setTimeline([]);
@@ -1268,6 +1960,23 @@
         video.controls = true;
         video.muted = true;
         preview.appendChild(video);
+
+        video.addEventListener('play', () => {
+          currentBoxUpdateToken += 1;
+          lastLiveVideoAnalyzeAt = 0;
+          lastLiveVideoOfflineStatusAt = 0;
+          startRealtimeVideoLabeling(video, currentBoxUpdateToken);
+        });
+
+        video.addEventListener('ended', () => {
+          setStatus('Video playback ended.');
+        });
+
+        video.addEventListener('pause', () => {
+          if (!video.ended) {
+            setStatus('Video paused. Realtime labeling paused.');
+          }
+        });
       } else {
         preview.innerHTML = '<div class="preview-note">Unsupported file type.</div>';
         analyzeBtn.disabled = true;
@@ -1310,9 +2019,10 @@
 
     async function analyzeImageFromBackend(file) {
       setStatus('Sending image to YOLO backend...');
-      const result = await sendToBackend('/api/analyze-image', file);
+      const result = await sendToBackend('/api/analyze-image', file, { conf: 0.1 });
+      const filteredDetections = filterDetectionsForDisplay(result.detections || [], { width: result.image_width, height: result.image_height });
       const actionResult = buildApiActionResult(result);
-      const detections = result.detections || [];
+      const detections = filteredDetections;
       const interactions = Array.isArray(result.interactions) ? result.interactions : [];
       const score = Math.max(8, Math.min(97, (actionResult ? actionResult.riskScore : 20) * 0.9 + (actionResult ? actionResult.confidence * 10 : 0)));
       const objectSummary = result.object_summary || {};
@@ -1355,7 +2065,7 @@
 
     async function analyzeVideoFromBackend(file) {
       setStatus('Sending video to YOLO backend...');
-      const result = await sendToBackend('/api/analyze-video', file);
+      const result = await sendToBackend('/api/analyze-video', file, { conf: 0.12 });
       const actionResult = buildApiActionResult(result);
       const metrics = result.metrics || {};
       const interactions = Array.isArray(result.interactions) ? result.interactions : [];
@@ -1376,12 +2086,40 @@
       });
       applyResult(score, flags, videoResultToTimeline(result), 'YOLO video analysis completed.', actionResult);
 
-      const previewDetections = result.preview_detections || [];
+      const previewDetections = filterDetectionsForDisplay(result.preview_detections || [], { width: result.image_width, height: result.image_height });
       const rendered = renderDetectionBoxes(previewDetections, { width: result.image_width, height: result.image_height }, actionResult);
       if (!rendered) {
         clearCameraOverlay();
       }
       setDetectedObjectsAction(previewDetections, actionResult);
+    }
+
+    function launchVideoBatchAnalysis(file) {
+      if (videoBatchAnalyzeInFlight) {
+        setStatus('Video analysis already running. Realtime labeling stays active during playback.');
+        return;
+      }
+
+      videoBatchAnalyzeInFlight = true;
+      setStatus('Video playback started. Running full analysis in background...');
+
+      (async () => {
+        try {
+          try {
+            await analyzeVideoFromBackend(file);
+          } catch (error) {
+            if (!isNetworkFetchError(error)) {
+              throw error;
+            }
+            await analyzeVideoLocally(file);
+          }
+        } catch (error) {
+          setStatus('Video analysis failed: ' + (error && error.message ? error.message : 'unknown error'));
+          console.error(error);
+        } finally {
+          videoBatchAnalyzeInFlight = false;
+        }
+      })();
     }
 
     function formatTime(seconds) {
@@ -1391,9 +2129,7 @@
     }
 
     function applyResult(score, flags, timeline, statusMessage, actionResult) {
-      let label = 'LOW RISK';
-      if (score >= 70) label = 'HIGH RISK';
-      else if (score >= 40) label = 'MEDIUM RISK';
+      const label = riskLabelFromScore(score);
 
       updateRiskUI(score, label);
       setAction(actionResult || null);
@@ -1426,7 +2162,14 @@
           if (!currentFile) {
             throw new Error('No uploaded image file found.');
           }
-          await analyzeImageFromBackend(currentFile);
+          try {
+            await analyzeImageFromBackend(currentFile);
+          } catch (error) {
+            if (!isNetworkFetchError(error)) {
+              throw error;
+            }
+            await analyzeImageLocally(currentFile, 'image');
+          }
         } else if (currentType === 'camera/live') {
           const cameraFrame = await imageFromVideoFrame(media);
           const canvas = document.createElement('canvas');
@@ -1439,13 +2182,29 @@
             throw new Error('Unable to capture live camera frame.');
           }
           const file = new File([blob], 'live-camera-frame.png', { type: 'image/png' });
-          await analyzeImageFromBackend(file);
-          setStatus('Live camera frame analyzed by YOLO backend.');
+          try {
+            await analyzeImageFromBackend(file);
+            setStatus('Live camera frame analyzed by YOLO backend.');
+          } catch (error) {
+            if (!isNetworkFetchError(error)) {
+              throw error;
+            }
+            await analyzeImageLocally(file, 'camera frame');
+          }
         } else if (currentType.startsWith('video/')) {
           if (!currentFile) {
             throw new Error('Video file missing');
           }
-          await analyzeVideoFromBackend(currentFile);
+
+          if (media && media.tagName && media.tagName.toLowerCase() === 'video') {
+            try {
+              await media.play();
+            } catch (error) {
+              // Ignore autoplay restrictions; user can press play manually.
+            }
+          }
+
+          launchVideoBatchAnalysis(currentFile);
         }
       } catch (error) {
         setStatus('Analysis failed: ' + (error && error.message ? error.message : 'Try a different file.'));
@@ -1459,6 +2218,9 @@
       mediaInput.value = '';
       clearPreview();
     });
+
+    showActionBtn.addEventListener('click', () => setInsightMode('action'));
+    showObjectsBtn.addEventListener('click', () => setInsightMode('objects'));
 
     openCameraBtn.addEventListener('click', openCamera);
     stopCameraBtn.addEventListener('click', () => {
@@ -1497,6 +2259,7 @@
       showMedia(file);
     });
 
+    setInsightMode('action');
     clearPreview();
   </script>
 </body>

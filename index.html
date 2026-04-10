@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -12,6 +12,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="prefetch" href="crime_heatmap.html" as="document">
   <link rel="prefetch" href="crime_heatmap_preview.html" as="document">
+  <link rel="prefetch" href="crime_detection_media.html" as="document">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -152,6 +153,28 @@
     }
     .install-app-btn:hover {
       filter: brightness(1.05);
+    }
+
+    .media-studio-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      text-decoration: none;
+      border: 1px solid rgba(15, 118, 110, 0.32);
+      background: linear-gradient(135deg, rgba(15,118,110,0.95), rgba(21,88,155,0.95));
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 9px 14px;
+      box-shadow: 0 8px 16px rgba(7, 37, 62, 0.14);
+      letter-spacing: 0.15px;
+    }
+
+    .media-studio-link:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
     }
     
     .install-toast {
@@ -810,6 +833,7 @@
       <div class="header-content">
         <h1 class="title">Malaysia Crime Dashboard</h1>
         <p class="subtitle">Comprehensive insights into crime trends across Malaysia with interactive visualizations</p>
+        <a class="media-studio-link" href="crime_detection_media.html">🎬 Open Crime Detection Studio</a>
         <button id="install-app-btn" class="install-app-btn" type="button">Install App</button>
       </div>
     </div>
@@ -931,6 +955,13 @@
                 <a class="preview-overlay" href="crime_heatmap.html">→ Open interactive heatmap</a>
               </div>
             </div>
+          </div>
+
+          <div class="section-title"><span class="section-emoji">🎬</span>Crime Detection Media Studio</div>
+          <div class="panel" style="margin-bottom: 28px;">
+            <h3>Analyze Picture or Video</h3>
+            <p style="margin: 0 0 12px; color: var(--text-secondary); font-weight: 500;">Open the new studio to upload an image or video and run a rapid suspicious-pattern scan with timeline highlights.</p>
+            <a href="crime_detection_media.html" style="display: inline-block; text-decoration: none; background: linear-gradient(135deg, rgba(15,118,110,0.98), rgba(21,88,155,0.98)); color: #fff; font-weight: 800; border-radius: 10px; padding: 10px 14px; border: 1px solid rgba(15,118,110,0.3); box-shadow: 0 8px 16px rgba(7, 37, 62, 0.12);">→ Open Crime Detection Studio</a>
           </div>
         </div>
 
@@ -1217,8 +1248,8 @@
             const safeName = escapeAttribute(item.name);
             return `<div class="list-item district-row" data-district="${safeName}">
               <span class="item-name">${item.name}</span>
-              <span class="item-value">${item.value.toLocaleString()}</span>
               <button class="district-more-btn" type="button" data-district="${safeName}">Show more</button>
+              <span class="item-value">${item.value.toLocaleString()}</span>
               <div style="width: 40px; margin-left: 8px;"><div class="progress-bar"><div class="progress-fill" style="width: ${percent}%"></div></div></div>
             </div>`;
           })
